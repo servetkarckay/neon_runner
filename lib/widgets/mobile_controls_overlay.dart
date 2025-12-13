@@ -51,10 +51,10 @@ class _MobileControlsOverlayState extends State<MobileControlsOverlay> {
       return const SizedBox.shrink();
     }
 
-    return AnimatedOpacity(
-      opacity: _opacity,
-      duration: const Duration(milliseconds: 500), // Consider making a constant
-      child: Positioned.fill(
+    return Positioned.fill(
+      child: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 500), // Consider making a constant
         child: LayoutBuilder(
           builder: (context, constraints) {
             // Adjust button size based on screen width
