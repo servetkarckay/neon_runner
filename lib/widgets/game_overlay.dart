@@ -39,23 +39,23 @@ class _GameOverlayState extends State<GameOverlay> {
           children: [
             // Mute Button
             Positioned(
-              top: 16,
-              left: 16,
+              top: GameConfig.defaultOverlayPadding,
+              left: GameConfig.defaultOverlayPadding,
               child: GestureDetector(
                 onTap: () {
                   gameStateProvider.gameInstance.toggleMute();
                   // No need for setState here, Provider will rebuild
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(GameConfig.mobileControlPauseButtonPadding), // Reusing constant
                   decoration: BoxDecoration(
-                    color: Colors.black.withAlpha((255 * 0.6).round()),
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.cyan, width: 1),
+                    color: Colors.black.withAlpha((255 * GameConfig.hudMuteButtonBgAlpha).round()),
+                    borderRadius: BorderRadius.circular(GameConfig.mobileControlPauseButtonBorderRadius),
+                    border: Border.all(color: GameConfig.accentNeonColor, width: GameConfig.hudMuteButtonBorderWidth),
                   ),
                   child: Icon(
                     gameStateProvider.gameInstance.audioController.isMuted ? Icons.volume_off : Icons.volume_up,
-                    color: Colors.cyan,
+                    color: GameConfig.accentNeonColor,
                   ),
                 ),
               ),
@@ -63,8 +63,8 @@ class _GameOverlayState extends State<GameOverlay> {
 
             // Score Display
             Positioned(
-              top: 16,
-              right: 16,
+              top: GameConfig.defaultOverlayPadding,
+              right: GameConfig.defaultOverlayPadding,
               child: _ScoreDisplay(
                 score: gameStateProvider.score,
                 scoreGlitch: gameStateProvider.scoreGlitch,
@@ -73,60 +73,60 @@ class _GameOverlayState extends State<GameOverlay> {
 
             // Speed Display
             Positioned(
-              top: 60,
-              right: 16,
+              top: GameConfig.defaultOverlayPadding + GameConfig.defaultOverlaySpacing * 2.2, // Adjusted for spacing
+              right: GameConfig.defaultOverlayPadding,
               child: _TextDisplay(
                 label: 'SPEED',
                 value: '${gameStateProvider.speed.toInt()}',
-                color: Color(0xFF00FF41),
+                color: GameConfig.primaryNeonColor,
               ),
             ),
 
             // Shield Status
             if (gameStateProvider.hasShield)
               Positioned(
-                top: 104,
-                right: 16,
+                top: GameConfig.defaultOverlayPadding + GameConfig.defaultOverlaySpacing * 4.4, // Adjusted for spacing
+                right: GameConfig.defaultOverlayPadding,
                 child: _TextDisplay(
                   label: 'SHIELD',
                   value: 'ACTIVE',
-                  color: Color(0xFF00FFFF),
+                  color: GameConfig.accentNeonColor,
                 ),
               ),
             
             // Multiplier Status
             if (gameStateProvider.multiplier > 1)
               Positioned(
-                top: 148,
-                right: 16,
+                top: GameConfig.defaultOverlayPadding + GameConfig.defaultOverlaySpacing * 6.6, // Adjusted for spacing
+                right: GameConfig.defaultOverlayPadding,
                 child: _TextDisplay(
                   label: 'MULTIPLIER',
                   value: 'x${gameStateProvider.multiplier}',
-                  color: Color(0xFFFFFF00),
+                  color: GameConfig.yellowNeonColor,
                 ),
               ),
 
             // Time Warp Status
             if (gameStateProvider.timeWarpActive)
               Positioned(
-                top: 192,
-                right: 16,
+                top: GameConfig.defaultOverlayPadding + GameConfig.defaultOverlaySpacing * 8.8, // Adjusted for spacing
+                right: GameConfig.defaultOverlayPadding,
                 child: _TextDisplay(
                   label: 'TIME WARP',
-                  value: '${(gameStateProvider.timeWarpTimer / 60).ceil()}s',
-                  color: Color(0xFFAA00FF),
+                  value: '${(gameStateProvider.timeWarpTimer / GameConfig.framesPerSecond).ceil()}s', // Using constant
+                  color: GameConfig.purpleNeonColor,
                 ),
               ),
 
             // Magnet Status
             if (gameStateProvider.magnetActive)
               Positioned(
-                top: 236,
-                right: 16,
+                top: GameConfig.defaultOverlayPadding + GameConfig.defaultOverlaySpacing * 11, // Adjusted for spacing
+                right: GameConfig.defaultOverlayPadding,
                 child: _TextDisplay(
                   label: 'MAGNET',
-                  value: '${(gameStateProvider.magnetTimer / 60).ceil()}s',
-                  color: Color(0xFFFF00FF),
+                  value: '${(gameStateProvider.magnetTimer / GameConfig.framesPerSecond).ceil()}s', // Using constant
+                  color: GameConfig.pinkNeonColor,
                 ),
               ),
           ],
@@ -148,28 +148,28 @@ class _ScoreDisplay extends StatelessWidget {
     return TweenAnimationBuilder<double>(
       key: ValueKey('score_$score'), // Key to trigger animation on score change
       tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 200), // Quick animation for score update
+      duration: const Duration(milliseconds: GameConfig.hudScoreAnimationDurationMs), // Quick animation for score update
       builder: (context, value, child) {
         return Transform.scale(
-          scale: 1 + (value * 0.1), // Scale up slightly on change
+          scale: 1 + (value * GameConfig.hudScoreScaleAnimation), // Scale up slightly on change
           child: Text(
             'SCORE: $score',
             style: TextStyle(
               fontFamily: 'Share Tech Mono',
-              fontSize: 24,
-              color: scoreGlitch ? Colors.red : Color(0xFF00FF41),
+              fontSize: GameConfig.hudScoreFontSize,
+              color: scoreGlitch ? GameConfig.errorNeonColor : GameConfig.primaryNeonColor,
               shadows: scoreGlitch
                   ? [
                       Shadow(
-                        blurRadius: 5.0,
-                        color: Colors.red.withAlpha((255 * 0.8).round()),
+                        blurRadius: GameConfig.playerTrailBlurRadiusMultiplier, // Reusing blur radius for consistent neon glow
+                        color: GameConfig.errorNeonColor.withAlpha((255 * GameConfig.hudScoreShadowAlpha).round()),
                         offset: Offset(0, 0),
                       ),
                     ]
                   : [
                       Shadow(
-                        blurRadius: 5.0,
-                        color: const Color(0xFF00FF41).withAlpha((255 * 0.8).round()),
+                        blurRadius: GameConfig.playerTrailBlurRadiusMultiplier, // Reusing blur radius for consistent neon glow
+                        color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.hudScoreShadowAlpha).round()),
                         offset: Offset(0, 0),
                       ),
                     ],
@@ -202,15 +202,15 @@ class _TextDisplay extends StatelessWidget {
           label,
           style: TextStyle(
             fontFamily: 'Share Tech Mono',
-            fontSize: 12,
-            color: color.withAlpha((255 * 0.7).round()),
+            fontSize: GameConfig.hudLabelFontSize,
+            color: color.withAlpha((255 * GameConfig.hudLabelAlpha).round()),
           ),
         ),
         Text(
           value,
           style: TextStyle(
             fontFamily: 'Share Tech Mono',
-            fontSize: 18,
+            fontSize: GameConfig.hudValueFontSize,
             color: color,
           ),
         ),

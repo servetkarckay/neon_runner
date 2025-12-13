@@ -51,9 +51,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
 
     return AnimatedOpacity(
       opacity: _opacity,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500), // Consider making a constant
       child: Scaffold(
-      backgroundColor: Colors.black.withAlpha((255 * 0.8).round()),
+      backgroundColor: Colors.black.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -62,36 +62,36 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
               'SYSTEM FAILURE',
               style: TextStyle(
                 fontFamily: 'Orbitron',
-                fontSize: 36,
+                fontSize: GameConfig.gameOverTitleFontSize,
                 fontWeight: FontWeight.bold,
-                color: Colors.red,
+                color: GameConfig.errorNeonColor,
                 shadows: [
                   Shadow(
-                    color: const Color(0x80FF0000),
-                    blurRadius: 20,
+                    color: GameConfig.errorNeonColor.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()), // Consistent shadow alpha
+                    blurRadius: GameConfig.gameOverTitleBlurRadius,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.defaultOverlaySpacing),
             Text(
               'FINAL SCORE: ${widget.game.score.toString().padLeft(6, '0')}',
               style: const TextStyle(
                 fontFamily: 'Share Tech Mono',
-                fontSize: 24,
-                color: Color(0xFF00FF41),
+                fontSize: GameConfig.gameOverScoreFontSize,
+                color: GameConfig.primaryNeonColor,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: GameConfig.defaultOverlayPadding),
             Text(
               'BEST SCORE: ${widget.game.highscore}',
               style: const TextStyle(
                 fontFamily: 'Share Tech Mono',
-                fontSize: 16,
-                color: Colors.white70,
+                fontSize: GameConfig.gameOverHighscoreFontSize,
+                color: Colors.white70, // Consider making a constant
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: GameConfig.mainMenuSectionSpacing), // Reusing section spacing
             MenuButton(
               text: 'REBOOT SYSTEM',
               onTap: () {
@@ -100,14 +100,14 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                 });
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.gameOverButtonSpacing),
             MenuButton(
               text: 'LEADERBOARD',
               onTap: () {
                 gameStateProvider.showLeaderboard();
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.gameOverButtonSpacing),
             MenuButton(
               text: 'MAIN MENU',
               onTap: () {

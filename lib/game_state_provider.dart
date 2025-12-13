@@ -18,8 +18,7 @@ class GameStateProvider extends ChangeNotifier {
   // Getter to expose the game instance
   NeonRunnerGame get gameInstance => _game;
 
-
-  GameState get currentGameState => _game.gameState;
+  // HUD-related getters
   int get score => _game.score;
   double get speed => _game.speed;
   bool get hasShield => _game.playerData.hasShield;
@@ -32,24 +31,37 @@ class GameStateProvider extends ChangeNotifier {
   bool get scoreGlitch => _game.scoreGlitch;
   bool get isGrazing => _game.playerData.isGrazing;
 
+  GameState _currentGameState = GameState.menu;
+
+  // Getter to expose the current game state
+  GameState get currentGameState => _currentGameState;
+  
+  // Method to update the game state
   void updateGameState(GameState newState) {
-    _game.gameState = newState;
+    _currentGameState = newState;
     notifyListeners();
   }
 
   void startGame() {
+    // Ensure the game is initialized before starting
+    if (!_game.isMounted) { // Check if the game is already mounted before adding
+       // This might not be the right place to add the game, it's usually added in main.dart GameWidget
+    }
     _game.initGame();
-    updateGameState(GameState.playing);
+    _currentGameState = GameState.playing; // Directly set state
+    notifyListeners();
   }
 
   void pauseGame() {
     _game.togglePause();
-    updateGameState(GameState.paused);
+    _currentGameState = GameState.paused; // Directly set state
+    notifyListeners();
   }
 
   void resumeGame() {
     _game.togglePause();
-    updateGameState(GameState.playing);
+    _currentGameState = GameState.playing; // Directly set state
+    notifyListeners();
   }
 
   void gameOver() {
@@ -63,7 +75,8 @@ class GameStateProvider extends ChangeNotifier {
     if (_game.score > _game.highscore) { // Only submit if it's a new high score
       leaderboardService.submitScore(playerId, playerName, _game.score);
     }
-    updateGameState(GameState.gameOver);
+    _currentGameState = GameState.gameOver; // Directly set state
+    notifyListeners();
   }
 
   void showLeaderboard() {

@@ -12,9 +12,9 @@ class VignetteEffect extends StatelessWidget {
             colors: [
               Colors.transparent,
               Colors.transparent,
-              Colors.black.withAlpha((255 * 0.8).round()),
+              Colors.black.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()), // Using overlay background alpha for consistency
             ],
-            stops: const [0.6, 0.8, 1.0], // Adjust stops for desired effect
+            stops: const [GameConfig.vignetteStop1, GameConfig.vignetteStop2, GameConfig.vignetteStop3],
           ),
         ),
       ),

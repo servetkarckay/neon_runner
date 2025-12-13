@@ -51,9 +51,9 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
 
     return AnimatedOpacity(
       opacity: _opacity,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500), // Consider making a constant
       child: Scaffold(
-        backgroundColor: Colors.black.withAlpha((255 * 0.8).round()),
+        backgroundColor: Colors.black.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -62,18 +62,18 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
                 'SETTINGS',
                 style: TextStyle(
                   fontFamily: 'Orbitron',
-                  fontSize: 48,
+                  fontSize: GameConfig.mainMenuTitleFontSize, // Reusing main menu title size
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF00FF41),
+                  color: GameConfig.primaryNeonColor,
                   shadows: [
                     Shadow(
-                      color: Color(0x8000FF41),
-                      blurRadius: 20,
+                      color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()),
+                      blurRadius: GameConfig.mainMenuTitleBlurRadius, // Reusing main menu title blur
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: GameConfig.mainMenuSectionSpacing), // Reusing section spacing
               _SettingItem(
                 label: 'SOUND',
                 valueWidget: Switch(
@@ -81,12 +81,12 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
                   onChanged: (bool value) {
                     gameStateProvider.gameInstance.toggleMute();
                   },
-                  activeThumbColor: const Color(0xFF00FF41),
-                  inactiveThumbColor: Colors.grey,
-                  inactiveTrackColor: Colors.grey.withAlpha(128),
+                  activeThumbColor: GameConfig.primaryNeonColor,
+                  inactiveThumbColor: Colors.grey, // Consider making a constant
+                  inactiveTrackColor: Colors.grey.withAlpha(128), // Consider making a constant
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: GameConfig.defaultOverlaySpacing), // Reusing default spacing
               MenuButton(
                 text: 'BACK TO MAIN MENU',
                 onTap: () {
@@ -113,7 +113,7 @@ class _SettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: GameConfig.pauseMenuActionButtonPaddingHorizontal, vertical: GameConfig.defaultOverlayPadding), // Reusing padding constants
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -121,8 +121,8 @@ class _SettingItem extends StatelessWidget {
             label,
             style: const TextStyle(
               fontFamily: 'Share Tech Mono',
-              fontSize: 20,
-              color: Colors.white,
+              fontSize: GameConfig.pauseMenuActionButtonFontSize, // Reusing font size
+              color: Colors.white, // Consider making a constant
             ),
           ),
           valueWidget,

@@ -55,18 +55,18 @@ class _MobileControlsOverlayState extends State<MobileControlsOverlay> {
 
     return AnimatedOpacity(
       opacity: _opacity,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500), // Consider making a constant
       child: Positioned.fill(
         child: LayoutBuilder(
           builder: (context, constraints) {
             // Adjust button size based on screen width
-            final buttonSize = constraints.maxWidth * 0.15; // 15% of screen width
+            final buttonSize = constraints.maxWidth * GameConfig.mobileControlDuckJumpButtonSizeRatio;
 
             return Stack(
               children: [
                 Positioned(
-                  left: constraints.maxWidth * 0.05, // 5% from left
-                  bottom: constraints.maxHeight * 0.1, // 10% from bottom
+                  left: constraints.maxWidth * GameConfig.mobileControlButtonHorizontalMarginRatio,
+                  bottom: constraints.maxHeight * GameConfig.mobileControlButtonBottomMarginRatio,
                   child: _MobileButton(
                     size: buttonSize,
                     label: 'DUCK',
@@ -82,20 +82,20 @@ class _MobileControlsOverlayState extends State<MobileControlsOverlay> {
                   ),
                 ),
                 Positioned(
-                  right: constraints.maxWidth * 0.05, // 5% from right
-                  bottom: constraints.maxHeight * 0.1, // 10% from bottom
+                  right: constraints.maxWidth * GameConfig.mobileControlButtonHorizontalMarginRatio,
+                  bottom: constraints.maxHeight * GameConfig.mobileControlButtonBottomMarginRatio,
                   child: _MobileButton(
                     size: buttonSize,
                     label: 'JUMP',
                     onTapDown: () {
-                      if (widget.game.gameState == GameState.menu || widget.game.gameState == GameState.gameOver) {
+                      if (gameStateProvider.currentGameState == GameState.menu || gameStateProvider.currentGameState == GameState.gameOver) {
                         gameStateProvider.startGame();
                         return;
                       }
-                      if (widget.game.gameState == GameState.playing) {
+                      if (gameStateProvider.currentGameState == GameState.playing) {
                         if (!widget.game.inputLock) {
                           widget.game.playerData.isHoldingJump = true;
-                          widget.game.playerData.jumpBufferTimer = 8;
+                          widget.game.playerData.jumpBufferTimer = GameConfig.jumpBufferDuration;
                           if (!widget.game.playerData.isJumping) {
                             widget.game.performJump();
                           }
@@ -109,22 +109,22 @@ class _MobileControlsOverlayState extends State<MobileControlsOverlay> {
                 ),
                 // Pause button
                 Positioned(
-                  top: 16,
-                  right: 16,
+                  top: GameConfig.defaultOverlayPadding,
+                  right: GameConfig.defaultOverlayPadding,
                   child: GestureDetector(
                     onTap: () {
                       gameStateProvider.pauseGame();
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(GameConfig.mobileControlPauseButtonPadding),
                       decoration: BoxDecoration(
-                        color: Colors.black.withAlpha((255 * 0.6).round()),
-                        borderRadius: BorderRadius.circular(8.0),
-                        border: Border.all(color: const Color(0xFF00FF41), width: 1),
+                        color: Colors.black.withAlpha((255 * GameConfig.mobileControlPauseButtonBgAlpha).round()),
+                        borderRadius: BorderRadius.circular(GameConfig.mobileControlPauseButtonBorderRadius),
+                        border: Border.all(color: GameConfig.primaryNeonColor, width: GameConfig.mobileControlPauseButtonBorderWidth),
                       ),
                       child: const Icon(
                         Icons.pause,
-                        color: Color(0xFF00FF41),
+                        color: GameConfig.primaryNeonColor,
                       ),
                     ),
                   ),
@@ -161,13 +161,13 @@ class _MobileButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha((255 * 0.5).round()),
+          color: Colors.black.withAlpha((255 * GameConfig.mobileControlButtonBgAlpha).round()),
           shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFF00FF41), width: 2),
+          border: Border.all(color: GameConfig.primaryNeonColor, width: GameConfig.mobileControlButtonBorderWidth),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromARGB((255 * 0.2).round(), 0, 255, 65), // Not const
-                          blurRadius: 15,
+                          color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.mobileControlButtonShadowAlpha).round()),
+                          blurRadius: GameConfig.mobileControlButtonShadowBlurRadius,
                         ),
                       ],        ),
         child: Center(
@@ -175,8 +175,8 @@ class _MobileButton extends StatelessWidget {
             label,
             style: const TextStyle(
               fontFamily: 'Share Tech Mono',
-              color: Color(0xFF00FF41),
-              fontSize: 18,
+              color: GameConfig.primaryNeonColor,
+              fontSize: GameConfig.mobileControlButtonFontSize,
               fontWeight: FontWeight.bold,
             ),
           ),

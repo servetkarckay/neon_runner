@@ -38,8 +38,6 @@ class NeonRunnerGame extends FlameGame {
   AdsController get adsController => _adsController;
   LocalStorageService get localStorageService => _localStorageService;
 
-  GameState gameState = GameState.menu;
-
   // late final Hud _hud; // Declare Hud - Removed as it will be a Flutter Widget
 
   double speed = 0;
@@ -105,28 +103,8 @@ class NeonRunnerGame extends FlameGame {
     // Set game dimensions (handled by FlameGame itself, removed direct assignment)
 
 
-
-    // Add obstacle manager
-    _obstacleManager = ObstacleManager(
-      baseWidth: GameConfig.baseWidth,
-      groundLevel: GameConfig.groundLevel,
-      currentSpeed: speed,
-      frames: frames,
-    );
     add(_obstacleManager);
-
-    // Add power-up manager
-    _powerUpManager = PowerUpManager(
-      playerData: _playerData,
-      baseWidth: GameConfig.baseWidth,
-      groundLevel: GameConfig.groundLevel,
-      currentSpeed: speed,
-      frames: frames,
-    );
     add(_powerUpManager);
-
-    // Add particle manager
-    _particleManager = ParticleManager();
     add(_particleManager);
 
     // Set initial game state
@@ -137,10 +115,10 @@ class NeonRunnerGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
-    if (gameState != GameState.playing) return;
+    if (_gameStateProvider.currentGameState != GameState.playing) return;
 
     frames++;
-    final timeScale = _playerData.timeWarpTimer > 0 ? 0.5 : 1.0;
+    final timeScale = _playerData.timeWarpTimer > 0 ? 0.5 : 1.0; // Time warp speed reduction
 
     if (_playerData.timeWarpTimer > 0) {
       _playerData.timeWarpTimer--;
@@ -158,19 +136,19 @@ class NeonRunnerGame extends FlameGame {
     }
 
     // Score update
-    if (frames % 5 == 0) {
+    if (frames % GameConfig.scoreUpdateFrequency == 0) {
       score += (1 * _playerData.scoreMultiplier).toInt();
-      if (score > 0 && score % 100 == 0) {
+      if (score > 0 && score % GameConfig.scoreGlitchTrigger == 0) {
         _audioController.playScore();
         scoreGlitch = true;
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(const Duration(milliseconds: GameConfig.scoreGlitchDurationLong), () {
           scoreGlitch = false;
         });
       }
     }
-    if (Random().nextDouble() < 0.002 && !scoreGlitch) {
+    if (Random().nextDouble() < GameConfig.randomScoreGlitchChance && !scoreGlitch) {
       scoreGlitch = true;
-      Future.delayed(const Duration(milliseconds: 200), () {
+      Future.delayed(const Duration(milliseconds: GameConfig.scoreGlitchDurationShort), () {
         scoreGlitch = false;
       });
     }
@@ -192,9 +170,9 @@ class NeonRunnerGame extends FlameGame {
     _playerData.currentVelocity.y = _playerData.velocityY * dt; // Vertical displacement over dt
 
     if (_playerData.isDucking) {
-      _playerData.height = 20;
+      _playerData.height = GameConfig.playerDuckingHeight; // Using constant
     } else {
-      _playerData.height = 40;
+      _playerData.height = GameConfig.playerDefaultHeight; // Using constant
     }
 
     double groundTargetY = GameConfig.groundLevel;
@@ -207,7 +185,7 @@ class NeonRunnerGame extends FlameGame {
           final platformTop = obs.y;
           final playerBottomPrev = prevY + _playerData.height;
           final playerBottomCurr = _playerData.y + _playerData.height;
-          const tolerance = 5.0;
+          const tolerance = GameConfig.hazardZoneSafeTolerance; // Using tolerance constant
 
           if (playerBottomCurr >= platformTop - tolerance && playerBottomPrev <= platformTop + tolerance) {
             if (platformTop < groundTargetY) {
@@ -232,7 +210,7 @@ class NeonRunnerGame extends FlameGame {
         if (!onPlatform && groundTargetY == GameConfig.groundLevel) {
           _particleManager.createDust(_playerData.x, _playerData.y + _playerData.height);
         } else if (onPlatform) {
-          if (Random().nextDouble() > 0.9) {
+          if (Random().nextDouble() > 0.9) { // Consider making this a constant for particle effects
             _particleManager.createExplosion(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height, Colors.cyan, count: 1);
           }
         }
@@ -249,11 +227,10 @@ class NeonRunnerGame extends FlameGame {
       final pu = _powerUpManager.activePowerUps[i];
       // Power-ups are generally simpler AABB collisions, no sweep needed unless very fast
       if (rectRectCollision(
-          ui.Rect.fromLTWH(_playerData.x, _playerData.y, _playerData.width, _playerData.height),
           ui.Rect.fromLTWH(pu.x, pu.y, pu.width, pu.height))) {
         _activatePowerUp(pu.type);
         _powerUpManager.activePowerUps.removeAt(i);
-        _particleManager.createExplosion(pu.x + pu.width / 2, pu.y + pu.height / 2, Colors.white, count: 10);
+        _particleManager.createExplosion(pu.x + pu.width / 2, pu.y + pu.height / 2, Colors.white, count: GameConfig.powerUpCollisionParticleCount);
       }
     }
 
@@ -273,20 +250,20 @@ class NeonRunnerGame extends FlameGame {
       final cos0_05 = cos(currentFrame * 0.05);
 
       if (obs is MovingPlatformObstacleData && obs.oscillationAxis == OscillationAxis.horizontal) {
-        obsDx -= cos0_05 * 4; // Horizontal oscillation velocity
+        obsDx -= cos0_05 * 4; // Horizontal oscillation velocity - consider making a constant
       }
 
       if (obs is MovingAerialObstacleData) {
-        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.1) * 40; // Predict next Y
+        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.1) * 40; // Predict next Y - consider making constants
         obsDy = nextY - obs.y; // Vertical oscillation displacement
       } else if (obs is HazardObstacleData) {
-        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.05) * 25; // Predict next Y
+        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.05) * 25; // Predict next Y - consider making constants
         obsDy = nextY - obs.y; // Vertical oscillation displacement
       } else if (obs is MovingPlatformObstacleData && obs.oscillationAxis != OscillationAxis.horizontal) {
-        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.05) * 50; // Predict next Y
+        final nextY = obs.initialY + sin( (currentFrame + 1) * 0.05) * 50; // Predict next Y - consider making constants
         obsDy = nextY - obs.y; // Vertical oscillation displacement
       } else if (obs is FallingObstacleData) {
-        obsDy = (obs.velocityY + (0.4 * timeScale * dt)); // Approx displacement considering acceleration
+        obsDy = (obs.velocityY + (0.4 * timeScale * dt)); // Approx displacement considering acceleration - consider making a constant
       } else if (obs is RotatingLaserObstacleData) {
         obsPredictedAngle = (obs.angle + (obs.rotationSpeed * dt)); // Predicted angle for detailed check
       }
@@ -294,8 +271,8 @@ class NeonRunnerGame extends FlameGame {
       final obstacleDisplacement = Vector2(-obsDx * dt, obsDy); // Total displacement for dt
 
       final playerCollisionRect = ui.Rect.fromLTWH(
-          playerInitialRect.left + 10, playerInitialRect.top + 10,
-          playerInitialRect.width - 20, playerInitialRect.height - 20); // Player with padding
+          playerInitialRect.left + GameConfig.playerCollisionPadding, playerInitialRect.top + GameConfig.playerCollisionPadding,
+          playerInitialRect.width - (GameConfig.playerCollisionPadding * 2), playerInitialRect.height - (GameConfig.playerCollisionPadding * 2)); // Player with padding
 
       final obstacleCollisionRect = ui.Rect.fromLTWH(obs.x, obs.y, obs.width, obs.height);
 
@@ -339,7 +316,7 @@ class NeonRunnerGame extends FlameGame {
             safe = true;
           }
         } else if (obs.type == ObstacleType.hazardZone) {
-          if (_playerData.y + _playerData.height > obs.y + obs.height - 5) { // Use current player Y for this check
+          if (_playerData.y + _playerData.height > obs.y + obs.height - GameConfig.hazardZoneSafeTolerance) { // Use current player Y for this check
             safe = true; // Grazing hazard from below is safe, actual collision if player fully inside
           }
         }
@@ -349,13 +326,13 @@ class NeonRunnerGame extends FlameGame {
             safe = true;
           } else if (_playerData.hasShield) {
             _playerData.hasShield = false;
-            _playerData.invincibleTimer = 90;
-            _particleManager.createExplosion(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height / 2, const Color(0xFF00FFFF), count: 30);
-            obs.x = -1000;
+            _playerData.invincibleTimer = GameConfig.playerInvincibleDuration;
+            _particleManager.createExplosion(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height / 2, GameConfig.accentNeonColor, count: 30);
+            obs.x = GameConfig.obstacleRemoveX;
             _audioController.playShieldBreak();
           } else {
             if (tutorialActive) {
-              obs.x = GameConfig.baseWidth + 200;
+              obs.x = GameConfig.baseWidth + 200; // Tutorial obstacle bypass
               _audioController.playCrash();
             } else {
               gameOver();
@@ -369,7 +346,7 @@ class NeonRunnerGame extends FlameGame {
 
       // Grazing detection (needs to be adapted for sweep context or re-implemented)
       if (!isColliding && !obs.grazed) { // Only graze if not a full collision
-        const grazeDist = 30.0;
+        const grazeDist = GameConfig.grazeDistance;
         final playerCenter = Offset(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height / 2);
         final obsCenter = Offset(obs.x + obs.width / 2, obs.y + obs.height / 2);
         final distToObsCenter = (playerCenter - obsCenter).distance;
@@ -378,8 +355,8 @@ class NeonRunnerGame extends FlameGame {
           bool validGraze = true;
           if (obs.type == ObstacleType.laserGrid) {
             final lgObs = obs as LaserGridObstacleData;
-            final safeTop = lgObs.gapY - lgObs.gapHeight / 2 + 5;
-            final safeBottom = lgObs.gapY + lgObs.gapHeight / 2 - 5;
+            final safeTop = lgObs.gapY - lgObs.gapHeight / 2 + GameConfig.laserGridSafePadding;
+            final safeBottom = lgObs.gapY + lgObs.gapHeight / 2 - GameConfig.laserGridSafePadding;
             if (_playerData.y > safeTop && (_playerData.y + _playerData.height) < safeBottom) validGraze = false;
           } else if (obs.type == ObstacleType.platform || obs.type == ObstacleType.movingPlatform) {
             if (_playerData.y > obs.y + obs.height) validGraze = false;
@@ -390,7 +367,7 @@ class NeonRunnerGame extends FlameGame {
             // PWA logic: graze score awarded when player is past the center of the obstacle
             if (_playerData.x > obs.x + obs.width / 2) {
               obs.grazed = true;
-              score += (5 * _playerData.scoreMultiplier).toInt();
+              score += (GameConfig.grazeScoreAmount * _playerData.scoreMultiplier).toInt(); // Graze score amount - using constant
               _particleManager.createExplosion(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height / 2, Colors.white, count: 1);
             }
           }
@@ -587,7 +564,7 @@ class NeonRunnerGame extends FlameGame {
   }
 
   void _activatePowerUp(PowerUpType type) {
-    _powerUpMessageTimer = 90; // Display for 1.5 seconds (60 frames/sec * 1.5)
+    _powerUpMessageTimer = GameConfig.powerUpMessageDisplayDuration;
     switch (type) {
       case PowerUpType.shield:
         _playerData.hasShield = true;
@@ -595,19 +572,19 @@ class NeonRunnerGame extends FlameGame {
         _audioController.playPowerUp();
         break;
       case PowerUpType.multiplier:
-        _playerData.scoreMultiplier = 2;
-        _playerData.multiplierTimer = 600;
+        _playerData.scoreMultiplier = GameConfig.powerUpMultiplierValue;
+        _playerData.multiplierTimer = GameConfig.powerUpMultiplierDuration;
         _powerUpMessage = 'OVERCLOCK ACTIVATED';
         _audioController.playPowerUp();
         break;
       case PowerUpType.timeWarp:
-        _playerData.timeWarpTimer = 300;
+        _playerData.timeWarpTimer = GameConfig.powerUpTimeWarpDuration;
         _powerUpMessage = 'TIME WARP';
         _audioController.playTimeWarp();
         break;
       case PowerUpType.magnet:
         _playerData.hasMagnet = true;
-        _playerData.magnetTimer = 600;
+        _playerData.magnetTimer = GameConfig.powerUpMagnetDuration;
         _powerUpMessage = 'MAGNETIZED';
         _audioController.playPowerUp();
         break;
@@ -616,18 +593,18 @@ class NeonRunnerGame extends FlameGame {
 
   void _updateTutorial() {
     if (tutorialState == 'INTRO') {
-      if (frames > 150) tutorialState = 'JUMP_TEACH';
+      if (frames > GameConfig.tutorialIntroDuration) tutorialState = 'JUMP_TEACH';
       return;
     }
 
     if (_obstacleManager.activeObstacles.isEmpty) {
       if (tutorialState == 'JUMP_TEACH') {
         // Spawn a simple ground obstacle for jump tutorial
-        final obs = SimpleObstacleData(id: _obstacleManager.obstacleIdCounter, type: ObstacleType.ground, x: GameConfig.baseWidth, y: GameConfig.groundLevel - 30, width: 30, height: 30);
+        final obs = SimpleObstacleData(id: _obstacleManager.obstacleIdCounter, type: ObstacleType.ground, x: GameConfig.baseWidth + GameConfig.tutorialObstacleTutorialX, y: GameConfig.groundLevel - GameConfig.tutorialObstacleJumpYOffset, width: 30, height: 30);
         _obstacleManager.activeObstacles.add(obs);
       } else if (tutorialState == 'DUCK_TEACH') {
         // Spawn a hazard zone for duck tutorial
-        final obs = HazardObstacleData(id: _obstacleManager.obstacleIdCounter, x: GameConfig.baseWidth, y: GameConfig.groundLevel - 75, width: 200, height: 40, initialY: GameConfig.groundLevel - 75);
+        final obs = HazardObstacleData(id: _obstacleManager.obstacleIdCounter, x: GameConfig.baseWidth + GameConfig.tutorialObstacleTutorialX, y: GameConfig.groundLevel - GameConfig.tutorialObstacleDuckYOffset, width: 200, height: 40, initialY: GameConfig.groundLevel - GameConfig.tutorialObstacleDuckYOffset);
         _obstacleManager.activeObstacles.add(obs);
       }
     }
@@ -635,8 +612,8 @@ class NeonRunnerGame extends FlameGame {
     final firstObs = _obstacleManager.activeObstacles.isNotEmpty ? _obstacleManager.activeObstacles.first : null;
     if (firstObs != null) {
       final dist = firstObs.x - _playerData.x;
-      if (dist < 200 && dist > 50) {
-        speed = 2; // Slow down for tutorial
+      if (dist < GameConfig.tutorialSlowdownDistMin && dist > GameConfig.tutorialSlowdownDistTarget) {
+        speed = GameConfig.tutorialSpeed; // Slow down for tutorial
       } else {
         speed = GameConfig.baseSpeed;
       }
@@ -662,7 +639,7 @@ class NeonRunnerGame extends FlameGame {
   KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     final isKeyDown = event is KeyDownEvent;
 
-    if (gameState == GameState.menu || gameState == GameState.gameOver) {
+    if (_gameStateProvider.currentGameState == GameState.menu || _gameStateProvider.currentGameState == GameState.gameOver) {
       if (isKeyDown && (keysPressed.contains(LogicalKeyboardKey.space) || keysPressed.contains(LogicalKeyboardKey.enter))) {
         initGame();
         return KeyEventResult.handled;
@@ -676,12 +653,12 @@ class NeonRunnerGame extends FlameGame {
       return KeyEventResult.handled;
     }
 
-    if (gameState == GameState.playing) {
+    if (_gameStateProvider.currentGameState == GameState.playing) {
       if (keysPressed.contains(LogicalKeyboardKey.arrowUp) || keysPressed.contains(LogicalKeyboardKey.space)) {
         if (!inputLock) {
           _playerData.isHoldingJump = isKeyDown;
           if (isKeyDown) {
-            _playerData.jumpBufferTimer = 8;
+            _playerData.jumpBufferTimer = GameConfig.jumpBufferDuration;
             if (!_playerData.isJumping) {
               performJump();
             }
@@ -707,10 +684,10 @@ class NeonRunnerGame extends FlameGame {
     // Draw background grid lines (simplified for now)
     final gridPaint = Paint()
       ..color = const Color.fromRGBO(3, 160, 98, 0.3)
-      ..strokeWidth = 1;
-    final gridOffset = (frames * speed) % 100;
-    for (double i = 0; i < size.x / 100 + 2; i++) {
-      final gx = i * 100 - gridOffset;
+      ..strokeWidth = 1; // Consider making a constant for grid line width
+    final gridOffset = (frames * speed) % GameConfig.gridLineOffsetDivisor;
+    for (double i = 0; i < size.x / GameConfig.gridLineOffsetDivisor + 2; i++) {
+      final gx = i * GameConfig.gridLineOffsetDivisor - gridOffset;
       canvas.drawLine(Offset(gx, GameConfig.groundLevel), Offset(gx, size.y), gridPaint);
     }
 
@@ -719,19 +696,19 @@ class NeonRunnerGame extends FlameGame {
       Offset(0, GameConfig.groundLevel),
       Offset(size.x, GameConfig.groundLevel),
       Paint()
-        ..color = const Color(0xFF00FF41)
-        ..strokeWidth = 2,
+        ..color = GameConfig.primaryNeonColor
+        ..strokeWidth = GameConfig.groundLineStrokeWidth,
     );
 
     // Draw player trail
     for (int i = 0; i < _trailHistory.length; i++) {
       final trailNode = _trailHistory[i];
       final ratio = i / _trailHistory.length;
-      final alpha = ratio * 0.5; // PWA uses 0.5 as max alpha
+      final alpha = ratio * GameConfig.playerTrailAlphaMax; // Using constant
       // PWA uses HSL color and hue based on framesRef.current
-      final hue = (frames * 2) % 360; // Example: cycle hue every 180 frames
+      final hue = (frames * GameConfig.playerTrailHueCycleSpeed) % 360; // Using constant
       _playerTrailPaint.color = hslToColor(hue.toDouble(), 1.0, 0.5).withAlpha((255 * alpha).round());
-      _playerTrailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, ratio * 5); // Simple shadowBlur equivalent
+      _playerTrailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, ratio * GameConfig.playerTrailBlurRadiusMultiplier); // Using constant
       canvas.drawRect(trailNode, _playerTrailPaint);
     }
 
@@ -743,8 +720,8 @@ class NeonRunnerGame extends FlameGame {
     // Draw magnet effect
     if (_playerData.hasMagnet) {
       final magnetPaint = Paint()
-        ..color = const Color(0xFFFF00FF).withAlpha((255 * (0.5 + (sin(frames * 0.1) * 0.2))).round()); // Pulsing effect
-      final magnetRadius = (_playerData.width / 2) + 20 + (sin(frames * 0.15) * 5); // Oscillating radius
+        ..color = const Color(0xFFFF00FF).withAlpha((255 * (GameConfig.magnetEffectAlphaBase + (sin(frames * GameConfig.magnetEffectAlphaOscillationFrequency) * GameConfig.magnetEffectAlphaOscillation))).round()); // Pulsing effect
+      final magnetRadius = (_playerData.width / 2) + GameConfig.magnetRadiusBaseAdd + (sin(frames * GameConfig.magnetRadiusOscillationFrequency) * GameConfig.magnetRadiusOscillation); // Oscillating radius
       canvas.drawCircle(Offset(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height / 2), magnetRadius, magnetPaint);
     }
 
@@ -756,13 +733,13 @@ class NeonRunnerGame extends FlameGame {
         text: TextSpan(
           text: _powerUpMessage,
           style: TextStyle(
-            color: const Color(0xFF00FFFF).withAlpha((255 * (_powerUpMessageTimer / 90)).round()), // Fade out
-            fontSize: 30,
+            color: GameConfig.accentNeonColor.withAlpha((255 * (_powerUpMessageTimer / GameConfig.powerUpMessageDisplayDuration)).round()), // Fade out
+            fontSize: GameConfig.hudPowerUpMessageFontSize, // Using constant
             fontFamily: 'Share Tech Mono',
-            shadows: const [
+            shadows: [
               Shadow(
-                blurRadius: 5.0,
-                color: Color(0xFF00FFFF),
+                blurRadius: GameConfig.playerTrailBlurRadiusMultiplier, // Reusing blur radius for consistent neon glow
+                color: GameConfig.accentNeonColor,
                 offset: Offset(0, 0),
               ),
             ],
@@ -770,9 +747,8 @@ class NeonRunnerGame extends FlameGame {
         ),
       );
       textPainter.layout(maxWidth: size.x);
-      textPainter.paint(canvas, Offset((size.x - textPainter.width) / 2, size.y / 2 - 50)); // Centered slightly above middle
+      textPainter.paint(canvas, Offset((size.x - textPainter.width) / 2, size.y / 2 - GameConfig.hudPowerUpMessageYOffset)); // Centered slightly above middle
     }
-  }
 
   void _drawTutorial(Canvas canvas) {
     canvas.save();
@@ -781,13 +757,13 @@ class NeonRunnerGame extends FlameGame {
       textDirection: TextDirection.ltr,
     );
     final textStyle = const TextStyle(
-      color: Color(0xFF00FF41),
-      fontSize: 24,
+      color: GameConfig.primaryNeonColor,
+      fontSize: 24, // Consider making a constant
       fontFamily: 'Share Tech Mono',
     );
 
     // Background for tutorial text
-    canvas.drawRect(ui.Rect.fromLTWH(0, 0, size.x, 100), Paint()..color = const Color.fromRGBO(0, 0, 0, 0.5));
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, size.x, 100), Paint()..color = Colors.black.withAlpha((255 * GameConfig.tutorialBackgroundAlpha).round())); // Background for tutorial text
 
     String text = '';
     if (tutorialState == 'INTRO') {
@@ -800,28 +776,29 @@ class NeonRunnerGame extends FlameGame {
 
     textPainter.text = TextSpan(text: text, style: textStyle);
     textPainter.layout(maxWidth: size.x);
-    textPainter.paint(canvas, Offset((size.x - textPainter.width) / 2, 50 - textPainter.height / 2));
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, size.x, 100), Paint()..color = Colors.black.withAlpha((255 * GameConfig.tutorialBackgroundAlpha).round())); // Background for tutorial text
+    textPainter.paint(canvas, Offset((size.x - textPainter.width) / 2, 50 - textPainter.height / 2)); // Centered Y position for text
 
     // Draw arrow for jump/duck tutorial
     if (tutorialState == 'JUMP_TEACH' || tutorialState == 'DUCK_TEACH') {
       final arrowPaint = Paint()
-        ..color = const Color(0xFF00FF41)
-        ..strokeWidth = 3
+        ..color = GameConfig.primaryNeonColor
+        ..strokeWidth = GameConfig.tutorialArrowStrokeWidth
         ..style = PaintingStyle.stroke;
 
       final arrowPath = Path();
       if (tutorialState == 'JUMP_TEACH') {
-        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y - 10);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2, _playerData.y - 30);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2 - 10, _playerData.y - 20);
-        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y - 30);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2 + 10, _playerData.y - 20);
+        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y - 10); // Arrow start Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2, _playerData.y - 30); // Arrow end Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2 - 10, _playerData.y - 20); // Left wing
+        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y - 30); // Back to end Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2 + 10, _playerData.y - 20); // Right wing
       } else { // DUCK_TEACH
-        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 10);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 30);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2 - 10, _playerData.y + _playerData.height + 20);
-        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 30);
-        arrowPath.lineTo(_playerData.x + _playerData.width / 2 + 10, _playerData.y + _playerData.height + 20);
+        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 10); // Arrow start Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 30); // Arrow end Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2 - 10, _playerData.y + _playerData.height + 20); // Left wing
+        arrowPath.moveTo(_playerData.x + _playerData.width / 2, _playerData.y + _playerData.height + 30); // Back to end Y
+        arrowPath.lineTo(_playerData.x + _playerData.width / 2 + 10, _playerData.y + _playerData.height + 20); // Right wing
       }
       canvas.drawPath(arrowPath, arrowPaint);
     }
@@ -830,41 +807,30 @@ class NeonRunnerGame extends FlameGame {
 
 
   void initGame() {
-    if (isTransitioning) return;
-    isTransitioning = true;
     _audioController.startMusic();
 
-    Future.delayed(Duration.zero, () {
-      gameState = GameState.playing;
-      score = 0;
-      frames = 0;
-      speed = GameConfig.baseSpeed;
-      inputLock = false;
-      nextSpawn = 0;
+    // Reset player data
+    _playerData.reset();
+    _playerData.y = GameConfig.groundLevel - _playerData.height; // Adjust player height
 
-      // Reset player data
-      _playerData.reset();
-      _playerData.y = GameConfig.groundLevel - _playerData.height; // Adjust player height
+    // Reset managers
+    _obstacleManager.reset();
+    _powerUpManager.reset();
+    _particleManager.reset();
+    _trailHistory.clear(); // Clear trail history
 
-      // Reset managers
-      _obstacleManager.reset();
-      _powerUpManager.reset();
-      _particleManager.reset();
-      _trailHistory.clear(); // Clear trail history
+    score = 0;
+    frames = 0;
+    speed = GameConfig.baseSpeed;
+    inputLock = false;
+    nextSpawn = 0;
+    scoreGlitch = false;
+    isTransitioning = false; // Reset transition flag
 
-      scoreGlitch = false;
-      // setHudData not directly applicable here, will be handled by UI widgets
-      // activationMsg also handled by UI widgets
-
-      _audioController.startMusic();
-      isTransitioning = false;
-
-      // Check if tutorial needs to be shown
-      // If we had local storage here, we would check it. For now, always show.
-      tutorialActive = true;
-      tutorialState = 'INTRO';
-      nextSpawn = 100; // Delay first obstacle during tutorial
-    });
+    // Check if tutorial needs to be shown
+    tutorialActive = !_localStorageService.getTutorialSeen();
+    tutorialState = 'INTRO';
+    nextSpawn = 100; // Delay first obstacle during tutorial
   }
 
   void gameOver() {
@@ -874,25 +840,22 @@ class NeonRunnerGame extends FlameGame {
     }
     _audioController.stopMusic();
     _audioController.playCrash();
-    gameState = GameState.gameOver;
-    _particleManager.createExplosion(_playerData.x + _playerData.width/2, _playerData.y + _playerData.height/2, const Color(0xFF00FF41)); // Explosion on game over
+    _particleManager.createExplosion(_playerData.x + _playerData.width/2, _playerData.y + _playerData.height/2, GameConfig.primaryNeonColor); // Explosion on game over
     inputLock = true;
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: GameConfig.gameOverDelaySeconds), () { // Using constant for game over delay
       inputLock = false;
       // Offer rewarded ad to continue
       _adsController.showRewardedAd(() {
         // On reward earned, continue game
-        initGame(); // For now, just restart the game
+        _gameStateProvider.startGame(); // Use GameStateProvider to start game
       });
     });
   }
 
   void togglePause() {
-    if (gameState == GameState.playing) {
-      gameState = GameState.paused;
+    if (_gameStateProvider.currentGameState == GameState.playing) {
       _audioController.stopMusic();
-    } else if (gameState == GameState.paused) {
-      gameState = GameState.playing;
+    } else if (_gameStateProvider.currentGameState == GameState.paused) {
       _audioController.startMusic();
     }
   }

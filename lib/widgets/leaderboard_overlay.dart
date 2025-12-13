@@ -102,51 +102,50 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
 
     return AnimatedOpacity(
       opacity: _opacity,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500), // Consider making a constant
       child: Scaffold(
-      backgroundColor: Colors.black.withAlpha((255 * 0.8).round()),
+      backgroundColor: Colors.black.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()),
       body: Center(
         child: Container(
-          width: 400,
-          padding: const EdgeInsets.all(30),
+          width: GameConfig.leaderboardContainerWidth,
+          padding: const EdgeInsets.all(GameConfig.leaderboardContainerPadding),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFF00FF41), width: 2),
-            color: Color.fromARGB(229, 0, 20, 0), // Not const
+            border: Border.all(color: GameConfig.primaryNeonColor, width: GameConfig.leaderboardContainerBorderWidth),
+            color: GameConfig.darkGreenOverlayColor.withAlpha((255 * 0.9).round()), // Manual ARGB for black-greenish hue, slightly less transparent
             boxShadow: [
               BoxShadow(
-                color: Color.fromARGB((255 * 0.3).round(), 0, 255, 65),
-                blurRadius: 30,
+                color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.leaderboardContainerShadowAlpha).round()),
+                blurRadius: GameConfig.leaderboardContainerShadowBlurRadius,
               ),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'LEADERBOARD',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00FF41),
-                  shadows: [
-                  Shadow(
-                    color: Color(0x8000FF41),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-            ), // Missing closing parenthesis for the Text widget.
-              const SizedBox(height: 20),
+                          Text(
+                            'LEADERBOARD',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: GameConfig.leaderboardTitleFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: GameConfig.primaryNeonColor,
+                              shadows: [
+                                Shadow(
+                                  color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()), // Consistent shadow alpha
+                                  blurRadius: GameConfig.leaderboardTitleBlurRadius,
+                                ),
+                              ],
+                            ),
+                          ),              const SizedBox(height: GameConfig.defaultOverlaySpacing),
               _isLoading
                   ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FF41)),
+                      valueColor: AlwaysStoppedAnimation<Color>(GameConfig.primaryNeonColor),
                     )
                   : Column(
                       children: [
                         for (var entry in _leaderboardEntries)
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            padding: const EdgeInsets.symmetric(vertical: GameConfig.leaderboardEntryVerticalPadding),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -154,9 +153,9 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                                   '${entry['rank']}.',
                                   style: TextStyle(
                                     fontFamily: 'Share Tech Mono',
-                                    fontSize: 18,
+                                    fontSize: GameConfig.leaderboardEntryFontSize,
                                     color: entry['isUser'] == true
-                                        ? Colors.yellow
+                                        ? GameConfig.yellowNeonColor
                                         : Colors.white,
                                   ),
                                 ),
@@ -164,9 +163,9 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                                   entry['name'].toString(),
                                   style: TextStyle(
                                     fontFamily: 'Share Tech Mono',
-                                    fontSize: 18,
+                                    fontSize: GameConfig.leaderboardEntryFontSize,
                                     color: entry['isUser'] == true
-                                        ? Colors.yellow
+                                        ? GameConfig.yellowNeonColor
                                         : Colors.white,
                                     fontWeight: entry['isUser'] == true
                                         ? FontWeight.bold
@@ -177,9 +176,9 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                                   entry['score'].toString(),
                                   style: TextStyle(
                                     fontFamily: 'Share Tech Mono',
-                                    fontSize: 18,
+                                    fontSize: GameConfig.leaderboardEntryFontSize,
                                     color: entry['isUser'] == true
-                                        ? Colors.yellow
+                                        ? GameConfig.yellowNeonColor
                                         : Colors.white,
                                     fontWeight: entry['isUser'] == true
                                         ? FontWeight.bold
@@ -191,7 +190,7 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                           ),
                       ],
                     ),
-              const SizedBox(height: 30),
+              const SizedBox(height: GameConfig.leaderboardButtonSpacing),
               MenuButton(
                 text: 'BACK TO MAIN MENU',
                 onTap: () {

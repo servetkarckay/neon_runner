@@ -51,9 +51,9 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
 
     return AnimatedOpacity(
       opacity: _opacity,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500), // Consider making a constant
       child: Scaffold(
-      backgroundColor: Colors.black.withAlpha((255 * 0.8).round()),
+      backgroundColor: Colors.black.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -62,41 +62,41 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
               'SYSTEM PAUSED',
               style: TextStyle(
                 fontFamily: 'Orbitron',
-                fontSize: 36,
+                fontSize: GameConfig.pauseMenuTitleFontSize,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF00FF41),
+                color: GameConfig.primaryNeonColor,
                 shadows: [
                   Shadow(
-                    color: Color(0x8000FF41), // Direct ARGB value
-                    blurRadius: 20,
+                    color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.overlayBackgroundAlpha).round()), // Using overlay background alpha for consistent shadow effect
+                    blurRadius: GameConfig.pauseMenuTitleBlurRadius,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: GameConfig.mainMenuSectionSpacing), // Reusing section spacing
             _buildActionButton(
               text: 'RESUME',
-              color: const Color(0xFF00FF41),
+              color: GameConfig.primaryNeonColor,
               onPressed: () {
                 gameStateProvider.resumeGame();
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.pauseMenuButtonSpacing),
             _buildActionButton(
               text: 'LEADERBOARD',
-              color: Colors.white,
+              color: Colors.white, // Consider making a constant
               onPressed: () {
                 gameStateProvider.showLeaderboard();
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.pauseMenuButtonSpacing),
             MenuButton(
               text: 'SETTINGS',
               onTap: () {
                 gameStateProvider.updateGameState(GameState.settings);
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: GameConfig.pauseMenuButtonSpacing),
             MenuButton(
               text: 'BACK TO MAIN MENU',
               onTap: () {
@@ -119,20 +119,20 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
       style: ElevatedButton.styleFrom(
         foregroundColor: color,
         backgroundColor: Colors.transparent,
-        side: BorderSide(color: color, width: 1),
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+        side: BorderSide(color: color, width: GameConfig.menuButtonBorderWidth), // Reusing border width
+        padding: const EdgeInsets.symmetric(horizontal: GameConfig.pauseMenuActionButtonPaddingHorizontal, vertical: GameConfig.pauseMenuActionButtonPaddingVertical),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(GameConfig.pauseMenuActionButtonBorderRadius),
         ),
-        shadowColor: color.withAlpha((255 * 0.5).round()),
-        elevation: 10,
+        shadowColor: color.withAlpha((255 * GameConfig.pauseMenuActionButtonShadowAlpha).round()),
+        elevation: GameConfig.pauseMenuActionButtonElevation,
       ),
       child: Text(
         text,
         style: TextStyle(
           fontFamily: 'Share Tech Mono',
-          fontSize: 20,
-          letterSpacing: 2,
+          fontSize: GameConfig.pauseMenuActionButtonFontSize,
+          letterSpacing: GameConfig.pauseMenuActionButtonLetterSpacing,
         ),
       ),
     );
