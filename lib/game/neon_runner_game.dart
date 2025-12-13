@@ -641,7 +641,7 @@ class NeonRunnerGame extends FlameGame {
 
     if (_gameStateProvider.currentGameState == GameState.menu || _gameStateProvider.currentGameState == GameState.gameOver) {
       if (isKeyDown && (keysPressed.contains(LogicalKeyboardKey.space) || keysPressed.contains(LogicalKeyboardKey.enter))) {
-        initGame();
+        _gameStateProvider.startGame();
         return KeyEventResult.handled;
       }
     }
