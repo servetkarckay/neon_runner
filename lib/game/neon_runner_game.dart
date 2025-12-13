@@ -226,7 +226,7 @@ class NeonRunnerGame extends FlameGame {
     for (int i = _powerUpManager.activePowerUps.length - 1; i >= 0; i--) {
       final pu = _powerUpManager.activePowerUps[i];
       // Power-ups are generally simpler AABB collisions, no sweep needed unless very fast
-      if (rectRectCollision(
+      if (rectRectCollision(playerInitialRect, // Player's rect
           ui.Rect.fromLTWH(pu.x, pu.y, pu.width, pu.height))) {
         _activatePowerUp(pu.type);
         _powerUpManager.activePowerUps.removeAt(i);
@@ -749,6 +749,7 @@ class NeonRunnerGame extends FlameGame {
       textPainter.layout(maxWidth: size.x);
       textPainter.paint(canvas, Offset((size.x - textPainter.width) / 2, size.y / 2 - GameConfig.hudPowerUpMessageYOffset)); // Centered slightly above middle
     }
+  }
 
   void _drawTutorial(Canvas canvas) {
     canvas.save();

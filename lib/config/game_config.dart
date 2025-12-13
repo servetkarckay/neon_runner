@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 
 class GameConfig {
@@ -33,6 +34,7 @@ class GameConfig {
   static const int jumpBufferDuration = 8; // frames for jump buffer
 
   // Game Mechanics
+  static const double collisionEpsilon = 1e-4; // Added for collision detection
   static const double playerCollisionPadding = 10.0;
   static const double hazardZoneSafeTolerance = 5.0; // for grazing hazard from below
   static const double grazeDistance = 30.0;

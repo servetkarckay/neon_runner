@@ -3,6 +3,7 @@ import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_neon_runner/game_state_provider.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
+import 'package:flutter_neon_runner/config/game_config.dart';
 
 class GameOverlay extends StatefulWidget {
   final NeonRunnerGame game;

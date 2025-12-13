@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_neon_runner/config/game_config.dart';
 
 class VignetteEffect extends StatelessWidget {
   const VignetteEffect({super.key});
