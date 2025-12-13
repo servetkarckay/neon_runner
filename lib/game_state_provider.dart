@@ -53,6 +53,45 @@ class GameStateProvider extends ChangeNotifier {
     notifyListeners(); // Notify for general state changes (e.g., menu to playing)
   }
 
+  void startGame() {
+    // Ensure the game is initialized before starting
+    // _game.isMounted check might not be relevant here if game is managed by GameWidget
+    _game.initGame();
+    updateGameState(GameState.playing); // Use updateGameState to transition
+  }
+
+  void pauseGame() {
+    _game.togglePause();
+    updateGameState(GameState.paused); // Use updateGameState to transition
+  }
+
+  void resumeGame() {
+    _game.togglePause();
+    updateGameState(GameState.playing); // Use updateGameState to transition
+  }
+
+  void gameOver() {
+    _game.gameOver();
+    // Assuming _game.userId is already set from LocalStorageService
+    String playerId = _game.userId ?? const Uuid().v4();
+    _game.userId ??= playerId;
+
+    String playerName = 'ANONYMOUS'; // Placeholder, could be customizable later
+
+    if (_game.score > _game.highscore) { // Only submit if it's a new high score
+      leaderboardService.submitScore(playerId, playerName, _game.score);
+    }
+    updateGameState(GameState.gameOver); // Use updateGameState to transition
+  }
+
+  void showLeaderboard() {
+    updateGameState(GameState.leaderboardView);
+  }
+
+  void backToPauseMenu() {
+    updateGameState(GameState.paused);
+  }
+
   // New method to schedule HUD updates
   void _scheduleHudFrameCallback() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
