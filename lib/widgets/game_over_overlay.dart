@@ -31,19 +31,16 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
   @override
   void didUpdateWidget(covariant GameOverOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
-      if (gameStateProvider.currentGameState != GameState.gameOver && _opacity == 1.0) {
-        setState(() {
-          _opacity = 0.0;
-        });
-      } else if (gameStateProvider.currentGameState == GameState.gameOver && _opacity == 0.0) {
-        setState(() {
-          _opacity = 1.0;
-        });
-      }
-    });
+    final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
+    if (gameStateProvider.currentGameState != GameState.gameOver && _opacity == 1.0) {
+      setState(() {
+        _opacity = 0.0;
+      });
+    } else if (gameStateProvider.currentGameState == GameState.gameOver && _opacity == 0.0) {
+      setState(() {
+        _opacity = 1.0;
+      });
+    }
   }
 
   @override

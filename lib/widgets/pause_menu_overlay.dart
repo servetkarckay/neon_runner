@@ -31,21 +31,17 @@ class _PauseMenuOverlayState extends State<PauseMenuOverlay> {
   @override
   void didUpdateWidget(covariant PauseMenuOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
-      if (gameStateProvider.currentGameState != GameState.paused && _opacity == 1.0) {
-        setState(() {
-          _opacity = 0.0;
-        });
-      } else if (gameStateProvider.currentGameState == GameState.paused && _opacity == 0.0) {
-        setState(() {
-          _opacity = 1.0;
-        });
-      }
-    });
+    final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
+    if (gameStateProvider.currentGameState != GameState.paused && _opacity == 1.0) {
+      setState(() {
+        _opacity = 0.0;
+      });
+    } else if (gameStateProvider.currentGameState == GameState.paused && _opacity == 0.0) {
+      setState(() {
+        _opacity = 1.0;
+      });
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     final gameStateProvider = Provider.of<GameStateProvider>(context);

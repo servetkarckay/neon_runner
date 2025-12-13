@@ -30,19 +30,16 @@ class _MobileControlsOverlayState extends State<MobileControlsOverlay> {
   @override
   void didUpdateWidget(covariant MobileControlsOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
-      if (gameStateProvider.currentGameState != GameState.playing && _opacity == 1.0) {
-        setState(() {
-          _opacity = 0.0;
-        });
-      } else if (gameStateProvider.currentGameState == GameState.playing && _opacity == 0.0) {
-        setState(() {
-          _opacity = 1.0;
-        });
-      }
-    });
+    final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
+    if (gameStateProvider.currentGameState != GameState.playing && _opacity == 1.0) {
+      setState(() {
+        _opacity = 0.0;
+      });
+    } else if (gameStateProvider.currentGameState == GameState.playing && _opacity == 0.0) {
+      setState(() {
+        _opacity = 1.0;
+      });
+    }
   }
 
   @override

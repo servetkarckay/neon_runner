@@ -34,21 +34,17 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
   @override
   void didUpdateWidget(covariant LeaderboardOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
-      if (gameStateProvider.currentGameState != GameState.leaderboardView && _opacity == 1.0) {
-        setState(() {
-          _opacity = 0.0; // Start fade-out
-        });
-      } else if (gameStateProvider.currentGameState == GameState.leaderboardView && _opacity == 0.0) {
-        setState(() {
-          _opacity = 1.0; // Start fade-in
-        });
-      }
-    });
+    final gameStateProvider = Provider.of<GameStateProvider>(context, listen: false);
+    if (gameStateProvider.currentGameState != GameState.leaderboardView && _opacity == 1.0) {
+      setState(() {
+        _opacity = 0.0; // Start fade-out
+      });
+    } else if (gameStateProvider.currentGameState == GameState.leaderboardView && _opacity == 0.0) {
+      setState(() {
+        _opacity = 1.0; // Start fade-in
+      });
+    }
   }
-
   Future<void> _loadLeaderboard() async {
     setState(() {
       _isLoading = true;

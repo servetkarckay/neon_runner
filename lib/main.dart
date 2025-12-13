@@ -69,7 +69,6 @@ class _MyGameAppState extends State<MyGameApp> {
         ),
         home: Consumer<GameStateProvider>(
           builder: (context, gameStateProvider, child) {
-            print("CURRENT STATE: ${gameStateProvider.currentGameState}"); // DEBUG LOG
             final game =
                 gameStateProvider.gameInstance; // Access game from provider
             return Scaffold(

@@ -43,7 +43,6 @@ class GameStateProvider extends ChangeNotifier {
   }
 
   void startGame() {
-    print("GAME STARTED"); // DEBUG LOG
     // Ensure the game is initialized before starting
     if (!_game.isMounted) { // Check if the game is already mounted before adding
        // This might not be the right place to add the game, it's usually added in main.dart GameWidget
