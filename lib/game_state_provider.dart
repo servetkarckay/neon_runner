@@ -87,7 +87,14 @@ class GameStateProvider extends ChangeNotifier {
     updateGameState(GameState.paused);
   }
 
+  bool _hudUpdateScheduled = false; // Added to prevent multiple update schedules per frame
+
   void updateHudData() {
-    notifyListeners();
+    if (_hudUpdateScheduled) return; // If already scheduled, do nothing
+    _hudUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _hudUpdateScheduled = false; // Reset flag after callback runs
+      notifyListeners();
+    });
   }
 }
