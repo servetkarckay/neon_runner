@@ -32,69 +32,39 @@ class GameStateProvider extends ChangeNotifier {
   bool get isGrazing => _game.playerData.isGrazing;
 
   GameState _currentGameState = GameState.menu;
+  bool _isHudUpdateLoopActive = false; // New flag to control continuous HUD updates
 
   // Getter to expose the current game state
   GameState get currentGameState => _currentGameState;
   
   // Method to update the game state
   void updateGameState(GameState newState) {
+    if (_currentGameState == newState) return; // Only update if state actually changes
+
     _currentGameState = newState;
-    notifyListeners();
-  }
 
-  void startGame() {
-    // Ensure the game is initialized before starting
-    if (!_game.isMounted) { // Check if the game is already mounted before adding
-       // This might not be the right place to add the game, it's usually added in main.dart GameWidget
+    if (_currentGameState == GameState.playing && !_isHudUpdateLoopActive) {
+      _isHudUpdateLoopActive = true;
+      _scheduleHudFrameCallback(); // Start the HUD update loop
+    } else if (_currentGameState != GameState.playing && _isHudUpdateLoopActive) {
+      _isHudUpdateLoopActive = false; // Stop the HUD update loop (by not rescheduling)
     }
-    _game.initGame();
-    _currentGameState = GameState.playing; // Directly set state
-    notifyListeners();
+
+    notifyListeners(); // Notify for general state changes (e.g., menu to playing)
   }
 
-  void pauseGame() {
-    _game.togglePause();
-    _currentGameState = GameState.paused; // Directly set state
-    notifyListeners();
-  }
-
-  void resumeGame() {
-    _game.togglePause();
-    _currentGameState = GameState.playing; // Directly set state
-    notifyListeners();
-  }
-
-  void gameOver() {
-    _game.gameOver();
-    // Assuming _game.userId is already set from LocalStorageService
-    String playerId = _game.userId ?? const Uuid().v4();
-    _game.userId ??= playerId;
-
-    String playerName = 'ANONYMOUS'; // Placeholder, could be customizable later
-
-    if (_game.score > _game.highscore) { // Only submit if it's a new high score
-      leaderboardService.submitScore(playerId, playerName, _game.score);
-    }
-    _currentGameState = GameState.gameOver; // Directly set state
-    notifyListeners();
-  }
-
-  void showLeaderboard() {
-    updateGameState(GameState.leaderboardView);
-  }
-
-  void backToPauseMenu() {
-    updateGameState(GameState.paused);
-  }
-
-  bool _hudUpdateScheduled = false; // Added to prevent multiple update schedules per frame
-
-  void updateHudData() {
-    if (_hudUpdateScheduled) return; // If already scheduled, do nothing
-    _hudUpdateScheduled = true;
+  // New method to schedule HUD updates
+  void _scheduleHudFrameCallback() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _hudUpdateScheduled = false; // Reset flag after callback runs
-      notifyListeners();
+      if (!_isHudUpdateLoopActive) return; // If loop is deactivated, stop
+      notifyListeners(); // Notify listeners for HUD data
+
+      // If still playing, reschedule for the next frame
+      if (_currentGameState == GameState.playing) {
+        _scheduleHudFrameCallback();
+      } else {
+        _isHudUpdateLoopActive = false; // Ensure flag is false if state changed unexpectedly
+      }
     });
   }
 }

@@ -419,8 +419,6 @@ class NeonRunnerGame extends FlameGame {
     if (_trailHistory.length > maxTrail) {
       _trailHistory.removeAt(0);
     }
-
-    _gameStateProvider.updateHudData(); // Notify listeners of HUD data changes
   }
 
   void _spawnObstacleAndPowerUp() {
