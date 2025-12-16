@@ -243,3 +243,31 @@ class SlantedObstacleData extends ObstacleData {
         );
 
 }
+
+class SpikeObstacleData extends ObstacleData {
+  SpikeObstacleData({
+    required super.id,
+    required super.x,
+    required super.y,
+    required super.width,
+    required super.height,
+  }) : super(
+          type: ObstacleType.spike,
+          passed: false,
+          grazed: false,
+        );
+}
+
+class AerialObstacleData extends ObstacleData {
+  AerialObstacleData({
+    required super.id,
+    required super.x,
+    required super.y,
+    required super.width,
+    required super.height,
+  }) : super(
+          type: ObstacleType.aerial,
+          passed: false,
+          grazed: false,
+        );
+}

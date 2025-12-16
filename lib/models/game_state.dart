@@ -3,6 +3,7 @@ enum GameState {
   playing,
   paused,
   gameOver,
+  reviving,
   leaderboardView,
   settings,
 }

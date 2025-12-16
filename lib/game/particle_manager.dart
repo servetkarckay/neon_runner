@@ -1,13 +1,18 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/models/particle_data.dart';
-import 'package:flutter_neon_runner/utils/spawner_utils.dart';
+import 'package:flutter_neon_runner/game/systems/spawner_system.dart'; // NEW import
 import 'dart:math'; // Import for Random
 import 'dart:ui' as ui; // Import for ui.Rect
 
 class ParticleManager extends Component {
   final List<ParticleData> _activeParticles = [];
   final List<ParticleData> _particlePool = [];
+  late final SpawnerSystem _spawnerSystem; // NEW instance
+
+  ParticleManager() {
+    _spawnerSystem = SpawnerSystem(); // Initialize SpawnerSystem
+  }
 
   @override
   void update(double dt) {
@@ -37,7 +42,7 @@ class ParticleManager extends Component {
 
   void createExplosion(double x, double y, Color color, {int count = 20}) {
     for (int i = 0; i < count; i++) {
-      _activeParticles.add(getParticleFromPool(
+      _activeParticles.add(_spawnerSystem.getParticleFromPool( // UPDATED call
         _particlePool,
         x, y, (Random().nextDouble() - 0.5) * 10, (Random().nextDouble() - 0.5) * 10, color, Random().nextDouble() * 4 + 1, 1.0,
       ));
@@ -46,7 +51,7 @@ class ParticleManager extends Component {
 
   void createDust(double x, double y) {
     if (Random().nextDouble() > 0.5) return;
-    _activeParticles.add(getParticleFromPool(
+    _activeParticles.add(_spawnerSystem.getParticleFromPool( // UPDATED call
       _particlePool,
       x + Random().nextDouble() * 20, y, -2 - Random().nextDouble() * 2, -0.5 - Random().nextDouble() * 1, const Color(0xFF004400), 2, 0.5,
     ));

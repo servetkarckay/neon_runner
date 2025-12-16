@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 
 class GameConfig {
+  // Platform detection
+  static bool get isMobile => defaultTargetPlatform == TargetPlatform.iOS ||
+                              defaultTargetPlatform == TargetPlatform.android;
+  static const bool debugShowHitboxes = true; // Set to false for production
   static const double gravity = 0.9;
   static const double jumpForce = 9;
   static const double jumpSustain = 1.0;
@@ -196,9 +201,19 @@ class GameConfig {
 
   static const int gameOverDelaySeconds = 1;
 
+  // Revive system
+  static const int reviveBonusScore = 500;
+  static const int reviveInvincibilityDuration = 120; // 2 seconds at 60fps
+  static const int maxRunDurationSeconds = 300; // 5 minutes max run time
+  static const double maxScoreRate = 1000; // Max score per second for anti-cheat
+
   static const double vignetteStop1 = 0.6;
   static const double vignetteStop2 = 0.8;
   static const double vignetteStop3 = 1.0;
+
+  // Leaderboard validation
+  static const int maxPossibleScore = 999999; // Maximum score for anti-cheat validation
+  static const String leaderboardSecret = 'neon_runner_secret_key_2024'; // Secret key for leaderboard validation
 }
 
 class ObstacleConfig {

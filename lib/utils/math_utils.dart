@@ -13,7 +13,7 @@ bool lineLine(
   final uA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
   final uB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
 
-  return uA >= 0 && uA <= 1 && uB >= 0 && uB >= 1;
+  return uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1;
 }
 
 // Check if line segment intersects a rectangle

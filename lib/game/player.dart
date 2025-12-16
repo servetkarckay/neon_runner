@@ -1,7 +1,8 @@
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide Vector2;
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 import 'package:flutter_neon_runner/models/player_data.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class PlayerComponent extends Component {
   final PlayerData playerData;
@@ -68,4 +69,9 @@ class PlayerComponent extends Component {
   }
 
   // No update method here, player physics handled in the main game loop for now
+
+  // Getters for debug overlay compatibility
+  Vector2 get position => Vector2(playerData.x, playerData.y);
+
+  bool get isDead => false; // PlayerComponent doesn't track death - handled by game state
 }

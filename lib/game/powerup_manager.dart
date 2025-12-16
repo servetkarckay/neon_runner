@@ -2,38 +2,21 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-// import 'package:flutter_neon_runner/models/obstacle_data.dart'; // Removed: No longer needed for Rect
-import 'package:flutter_neon_runner/models/player_data.dart';
 import 'package:flutter_neon_runner/models/powerup_data.dart';
-import 'package:flutter_neon_runner/utils/spawner_utils.dart';
+import 'package:flutter_neon_runner/game/systems/spawner_system.dart'; // NEW import
 import 'dart:ui' as ui; // Import for ui.Rect
 
 class PowerUpManager extends Component {
+  late final NeonRunnerGame _game;
+  late final SpawnerSystem _spawnerSystem; // NEW instance
+
   final List<PowerUpData> _activePowerUps = [];
   final List<PowerUpData> _powerUpPool = [];
 
-  final PlayerData _playerData;
-  final double _baseWidth;
-  final double _groundLevel;
-  double _currentSpeed;
-  int _frames;
-
-  PowerUpManager({
-    required PlayerData playerData,
-    required double baseWidth,
-    required double groundLevel,
-    required double currentSpeed,
-    required int frames,
-  })  : _playerData = playerData,
-        _baseWidth = baseWidth,
-        _groundLevel = groundLevel,
-        _currentSpeed = currentSpeed,
-        _frames = frames;
-
-  void updateSpeedAndFrames(double newSpeed, int newFrames) {
-    _currentSpeed = newSpeed;
-    _frames = newFrames;
+  PowerUpManager(this._game) {
+    _spawnerSystem = SpawnerSystem(); // Initialize SpawnerSystem
   }
 
   void spawnPowerUp(double xOffset, {double? fixedY}) {
@@ -48,32 +31,35 @@ class PowerUpManager extends Component {
       type = PowerUpType.magnet;
     }
 
-    final y = fixedY ?? (_groundLevel - (Random().nextDouble() > 0.5 ? 90 : 40));
-    final pu = getPowerUpFromPool(_powerUpPool, type, _baseWidth + xOffset, y);
+    final y = fixedY ?? (_game.size.y - (Random().nextDouble() > 0.5 ? 90 : 40));
+    final pu = _spawnerSystem.getPowerUpFromPool(_powerUpPool, type, _game.size.x + xOffset, y); // UPDATED call
     _activePowerUps.add(pu);
   }
 
   @override
   void update(double dt) {
+    if (dt == 0) return;
     super.update(dt);
-    double timeScale = 1.0;
+    
+    final playerData = _game.playerData;
+    final timeScale = playerData.timeWarpTimer > 0 ? 0.5 : 1.0;
 
     for (int i = _activePowerUps.length - 1; i >= 0; i--) {
       final pu = _activePowerUps[i];
-      if (_playerData.hasMagnet) {
-        final dx = (_playerData.x + _playerData.width / 2) - (pu.x + pu.width / 2);
-        final dy = (_playerData.y + _playerData.height / 2) - (pu.y + pu.height / 2);
+      if (playerData.hasMagnet) {
+        final dx = (playerData.x + playerData.width / 2) - (pu.x + pu.width / 2);
+        final dy = (playerData.y + playerData.height / 2) - (pu.y + pu.height / 2);
         final dist = sqrt(dx * dx + dy * dy);
         if (dist < 400) {
           pu.x = pu.x + (dx / dist) * 15 * timeScale;
           pu.y = pu.y + (dy / dist) * 15 * timeScale;
         } else {
-          pu.x = pu.x - _currentSpeed * timeScale;
-          pu.y = pu.y + sin((_frames + pu.floatOffset) * 0.1) * 0.5 * timeScale;
+          pu.x = pu.x - _game.speed * timeScale;
+          pu.y = pu.y + sin((_game.frames + pu.floatOffset) * 0.1) * 0.5 * timeScale;
         }
       } else {
-        pu.x = pu.x - _currentSpeed * timeScale;
-        pu.y = pu.y + sin((_frames + pu.floatOffset) * 0.1) * 0.5 * timeScale;
+        pu.x = pu.x - _game.speed * timeScale;
+        pu.y = pu.y + sin((_game.frames + pu.floatOffset) * 0.1) * 0.5 * timeScale;
       }
       if (pu.x + pu.width < -50) {
         _powerUpPool.add(_activePowerUps.removeAt(i));

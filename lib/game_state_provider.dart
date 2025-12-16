@@ -1,87 +1,115 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/services/leaderboard_service.dart'; // Import LeaderboardService
-import 'package:uuid/uuid.dart'; // Import uuid for generating unique IDs
+import 'package:flutter_neon_runner/services/leaderboard_service.dart';
+import 'package:uuid/uuid.dart';
 
 class GameStateProvider extends ChangeNotifier {
   late NeonRunnerGame _game;
-  late final LeaderboardService leaderboardService; // Declare LeaderboardService
+  late final LeaderboardService leaderboardService;
 
   GameStateProvider() : leaderboardService = LeaderboardService();
 
-  // Method to set the game instance after provider is created
+  // Game instance management
   void setGame(NeonRunnerGame game) {
     _game = game;
   }
 
-  // Getter to expose the game instance
   NeonRunnerGame get gameInstance => _game;
 
-  // HUD-related getters
-  int get score => _game.score;
-  double get speed => _game.speed;
-  bool get hasShield => _game.playerData.hasShield;
-  int get multiplier => _game.playerData.scoreMultiplier.toInt();
-  int get multiplierTimer => _game.playerData.multiplierTimer;
-  bool get timeWarpActive => _game.playerData.timeWarpTimer > 0;
-  int get timeWarpTimer => _game.playerData.timeWarpTimer;
-  bool get magnetActive => _game.playerData.hasMagnet;
-  int get magnetTimer => _game.playerData.magnetTimer;
-  bool get scoreGlitch => _game.scoreGlitch;
-  bool get isGrazing => _game.playerData.isGrazing;
+  // --- State Management ---
 
+  // Main game state (e.g., menu, playing, gameOver)
   GameState _currentGameState = GameState.menu;
-  bool _isHudUpdateLoopActive = false; // New flag to control continuous HUD updates
-
-  // Getter to expose the current game state
   GameState get currentGameState => _currentGameState;
+
+  // For UI that needs to know if the game is paused by the engine
+  bool _isEnginePaused = false;
+  bool get isEnginePaused => _isEnginePaused;
+
+  // --- ValueNotifiers for reactive HUD updates ---
+  // These allow widgets to listen to specific data changes without
+  // rebuilding the entire widget tree via notifyListeners().
+
+  final ValueNotifier<int> score = ValueNotifier(0);
+  final ValueNotifier<int> highscore = ValueNotifier(0);
+  final ValueNotifier<double> speed = ValueNotifier(0.0);
+  final ValueNotifier<int> multiplier = ValueNotifier(1);
+  final ValueNotifier<bool> hasShield = ValueNotifier(false);
+  final ValueNotifier<bool> isGrazing = ValueNotifier(false);
+  final ValueNotifier<bool> scoreGlitch = ValueNotifier(false);
   
-  // Method to update the game state
+  // Power-up timers
+  final ValueNotifier<int> multiplierTimer = ValueNotifier(0);
+  final ValueNotifier<int> timeWarpTimer = ValueNotifier(0);
+  final ValueNotifier<int> magnetTimer = ValueNotifier(0);
+  
+
+  // --- Methods to update state from the game ---
+
+  /// Updates all HUD data from the game instance.
+  /// Called periodically from the game loop, but less frequently than every frame.
+  void updateHudData() {
+    score.value = _game.score;
+    highscore.value = _game.highscore;
+    speed.value = _game.speed;
+    multiplier.value = _game.playerData.scoreMultiplier.toInt();
+    hasShield.value = _game.playerData.hasShield;
+    isGrazing.value = _game.playerData.isGrazing;
+    scoreGlitch.value = _game.scoreGlitch;
+    multiplierTimer.value = _game.playerData.multiplierTimer;
+    timeWarpTimer.value = _game.playerData.timeWarpTimer;
+    magnetTimer.value = _game.playerData.magnetTimer;
+  }
+
+  // --- Game Flow Control Methods (called by UI) ---
+
   void updateGameState(GameState newState) {
-    if (_currentGameState == newState) return; // Only update if state actually changes
-
+    if (_currentGameState == newState) return;
     _currentGameState = newState;
-
-    if (_currentGameState == GameState.playing && !_isHudUpdateLoopActive) {
-      _isHudUpdateLoopActive = true;
-      _scheduleHudFrameCallback(); // Start the HUD update loop
-    } else if (_currentGameState != GameState.playing && _isHudUpdateLoopActive) {
-      _isHudUpdateLoopActive = false; // Stop the HUD update loop (by not rescheduling)
-    }
-
-    notifyListeners(); // Notify for general state changes (e.g., menu to playing)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   void startGame() {
-    // Ensure the game is initialized before starting
-    // _game.isMounted check might not be relevant here if game is managed by GameWidget
+    debugPrint('GameStateProvider: startGame() called.');
     _game.initGame();
-    updateGameState(GameState.playing); // Use updateGameState to transition
+    updateGameState(GameState.playing);
+    // The game is now responsible for its own running state.
+    // We just tell the UI what overlay to show.
+    if (_game.paused) {
+      _game.paused = false;
+    }
   }
 
   void pauseGame() {
-    _game.togglePause();
-    updateGameState(GameState.paused); // Use updateGameState to transition
+    if (_currentGameState != GameState.playing) return;
+    debugPrint('GameStateProvider: Pausing game.');
+    _game.paused = true;
+    _isEnginePaused = true;
+    updateGameState(GameState.paused);
   }
 
   void resumeGame() {
-    _game.togglePause();
-    updateGameState(GameState.playing); // Use updateGameState to transition
+    if (_currentGameState != GameState.paused) return;
+    debugPrint('GameStateProvider: Resuming game.');
+    _game.paused = false;
+    _isEnginePaused = false;
+    updateGameState(GameState.playing);
   }
 
   void gameOver() {
-    _game.gameOver();
-    // Assuming _game.userId is already set from LocalStorageService
+    updateGameState(GameState.gameOver);
+
     String playerId = _game.userId ?? const Uuid().v4();
     _game.userId ??= playerId;
+    String playerName = 'ANONYMOUS'; // Placeholder
 
-    String playerName = 'ANONYMOUS'; // Placeholder, could be customizable later
-
-    if (_game.score > _game.highscore) { // Only submit if it's a new high score
+    // Submit score to leaderboard
+    if (_game.score > 0) { // Can be adjusted based on logic
       leaderboardService.submitScore(playerId, playerName, _game.score);
     }
-    updateGameState(GameState.gameOver); // Use updateGameState to transition
   }
 
   void showLeaderboard() {
@@ -92,18 +120,18 @@ class GameStateProvider extends ChangeNotifier {
     updateGameState(GameState.paused);
   }
 
-  // New method to schedule HUD updates
-  void _scheduleHudFrameCallback() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isHudUpdateLoopActive) return; // If loop is deactivated, stop
-      notifyListeners(); // Notify listeners for HUD data
-
-      // If still playing, reschedule for the next frame
-      if (_currentGameState == GameState.playing) {
-        _scheduleHudFrameCallback();
-      } else {
-        _isHudUpdateLoopActive = false; // Ensure flag is false if state changed unexpectedly
-      }
-    });
+  @override
+  void dispose() {
+    score.dispose();
+    highscore.dispose();
+    speed.dispose();
+    multiplier.dispose();
+    hasShield.dispose();
+    isGrazing.dispose();
+    scoreGlitch.dispose();
+    multiplierTimer.dispose();
+    timeWarpTimer.dispose();
+    magnetTimer.dispose();
+    super.dispose();
   }
 }
