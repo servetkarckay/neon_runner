@@ -62,6 +62,15 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
   final List<ui.Rect> _trailHistory = []; // Player trail history
   final Paint _playerTrailPaint = Paint()..blendMode = BlendMode.plus;
 
+  // Pre-created Paint objects to avoid garbage collection in render loop
+  final Paint _groundLinePaint = Paint()
+    ..color = GameConfig.primaryNeonColor
+    ..strokeWidth = GameConfig.groundLineStrokeWidth;
+  final Paint _magnetPaint = Paint();
+
+  // Warning counter for dt == 0 messages
+  int _dtWarningCounter = 0;
+
   @override
   Color backgroundColor() => const Color(0xFF000000); // Black background
 
@@ -110,14 +119,23 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
 
   @override
   void update(double dt) {
-    debugPrint('NeonRunnerGame.update(dt: $dt), paused: $paused');
-    if (dt == 0 && !paused) {
-      debugPrint('WARNING: dt is 0 but game is NOT paused!');
+    // Skip update if dt is 0 to prevent potential issues with calculations
+    if (dt == 0) {
+      // Only log this warning occasionally to avoid spam
+      if (!paused) {
+        _dtWarningCounter++;
+        if (_dtWarningCounter % 60 == 0) {
+          debugPrint('WARNING: dt is 0 but game is NOT paused - skipping update to prevent issues');
+        }
+      }
+      return;
     }
+
     super.update(dt);
-    // The game loop now runs only when `paused` is false.
-    // The `if (_gameStateProvider.currentGameState != GameState.playing) return;`
-    // check is no longer needed.
+
+    // Early return if game is paused to avoid unnecessary processing
+    if (paused) return;
+
     frames++;
     final timeScale = _playerData.timeWarpTimer > 0
         ? 0.5
@@ -813,9 +831,7 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
     canvas.drawLine(
       Offset(0, GameConfig.groundLevel),
       Offset(size.x, GameConfig.groundLevel),
-      Paint()
-        ..color = GameConfig.primaryNeonColor
-        ..strokeWidth = GameConfig.groundLineStrokeWidth,
+      _groundLinePaint,
     );
 
     // Player trail
@@ -841,18 +857,17 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
     }
 
     if (_playerData.hasMagnet) {
-      final magnetPaint = Paint()
-        ..color = const Color(0xFFFF00FF).withAlpha(
-          (255 *
-                  (GameConfig.magnetEffectAlphaBase +
-                      (sin(
-                            frames *
-                                GameConfig
-                                    .magnetEffectAlphaOscillationFrequency,
-                          ) *
-                          GameConfig.magnetEffectAlphaOscillation)))
-              .round(),
-        );
+      _magnetPaint.color = const Color(0xFFFF00FF).withAlpha(
+        (255 *
+                (GameConfig.magnetEffectAlphaBase +
+                    (sin(
+                          frames *
+                              GameConfig
+                                  .magnetEffectAlphaOscillationFrequency,
+                        ) *
+                        GameConfig.magnetEffectAlphaOscillation)))
+            .round(),
+      );
       final magnetRadius =
           (_playerData.width / 2) +
           GameConfig.magnetRadiusBaseAdd +
@@ -864,7 +879,7 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
           _playerData.y + _playerData.height / 2,
         ),
         magnetRadius,
-        magnetPaint,
+        _magnetPaint,
       );
     }
 
@@ -1033,6 +1048,7 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
 
     score = 0;
     frames = 0;
+    _dtWarningCounter = 0;
     speed = GameConfig.baseSpeed;
     inputLock = false;
     scoreGlitch = false;

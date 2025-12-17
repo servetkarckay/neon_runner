@@ -74,6 +74,9 @@ class GameLoopController extends EventHandlerSystem {
 
   @override
   void update(double dt) {
+    // Skip update if dt is 0 to prevent potential issues
+    if (dt == 0) return;
+
     // Strict state-based update rules
     if (!_gameStateController.canUpdate) return;
 

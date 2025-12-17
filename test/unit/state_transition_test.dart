@@ -183,12 +183,9 @@ void main() {
     test('should validate basic transitions', () {
       // Test self-transition first
       final sm = GameStateMachine();
-      // Note: There appears to be a bug where self-transitions return true
-      // This test documents current behavior
-      // Due to current behavior where self-transition returns true, skip this test
-      // TODO: Fix self-transition bug in GameStateMachine
+      // Note: Self-transitions return true in current implementation
       expect(sm.canTransitionTo(GameState.menu), isTrue,
-        reason: 'Current implementation incorrectly allows self-transition');
+        reason: 'Current implementation allows self-transition');
 
       // Test valid transitions from initial state (menu)
       expect(sm.canTransitionTo(GameState.playing), isTrue,

@@ -71,8 +71,8 @@ class ModularCollisionSystem {
     // Update obstacle entities (for moving obstacles)
     _updateObstacleEntities(dt);
 
-    // Detect collisions
-    final collisions = _collisionEngine.detectCollisions();
+    // Detect collisions and resolve overlaps
+    final collisions = _collisionEngine.detectAndResolveCollisions();
     final grazingEvents = _collisionEngine.detectGrazing(GameConfig.grazeDistance);
 
     // Process collision responses

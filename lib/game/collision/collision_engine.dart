@@ -5,6 +5,7 @@ import 'package:vector_math/vector_math.dart';
 import 'package:flutter_neon_runner/game/collision/collision_types.dart';
 import 'package:flutter_neon_runner/game/collision/spatial_hash.dart';
 import 'package:flutter_neon_runner/game/collision/collision_helpers.dart';
+import 'package:flutter_neon_runner/game/collision/collision_resolver.dart';
 import 'package:flutter_neon_runner/utils/collision_utils.dart';
 import 'package:flutter_neon_runner/utils/math_utils.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
@@ -14,12 +15,14 @@ class CollisionEngine {
   final SpatialHash _spatialHash;
   final List<CollidableEntity> _entities;
   final Set<String> _collisionPairs;
+  final CollisionResolver _resolver;
 
   CollisionEngine({
     double cellSize = 100.0,
   }) : _spatialHash = SpatialHash(cellSize: cellSize),
        _entities = [],
-       _collisionPairs = HashSet<String>();
+       _collisionPairs = HashSet<String>(),
+       _resolver = CollisionResolver();
 
   /// Adds an entity to the collision system
   void addEntity(CollidableEntity entity) {
@@ -73,6 +76,47 @@ class CollisionEngine {
           }
         }
       }
+    }
+
+    return collisions;
+  }
+
+  /// Detects and resolves all collisions in the current frame
+  /// This is the main method that should be called to prevent overlapping
+  List<CollisionEvent> detectAndResolveCollisions() {
+    final collisions = <CollisionEvent>[];
+    final collisionInfos = <CollisionInfo>[];
+    _collisionPairs.clear();
+
+    // First pass: detect all collisions
+    for (final entity in _entities) {
+      final potentialCollisions = _spatialHash.query(entity.bounds);
+
+      for (final other in potentialCollisions) {
+        if (entity.id == other.id) continue;
+
+        // Skip if we've already processed this pair
+        final pairKey = _getPairKey(entity.id, other.id);
+        if (_collisionPairs.contains(pairKey)) continue;
+
+        if (entity.canCollideWith(other)) {
+          final collision = _checkCollision(entity, other);
+          if (collision != null) {
+            final priority = _getCollisionPriority(entity, other, collision);
+            collisions.add(CollisionEvent(
+              collisionInfo: collision,
+              priority: priority,
+            ));
+            collisionInfos.add(collision);
+            _collisionPairs.add(pairKey);
+          }
+        }
+      }
+    }
+
+    // Second pass: resolve all detected collisions
+    if (collisionInfos.isNotEmpty) {
+      _resolver.resolveCollisions(collisionInfos);
     }
 
     return collisions;
