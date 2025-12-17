@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-import 'package:flame/components.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
@@ -69,7 +68,7 @@ class MobilePerformanceSystem {
   static const double _renderBudget = 8.0;    // Half of frame budget
 
   // Optimization state
-  bool _isAdaptiveQualityEnabled = true;
+  final bool _isAdaptiveQualityEnabled = true;
   int _performanceLevel = 2; // 0=low, 1=medium, 2=high
 
   /// Check if adaptive quality is enabled
@@ -97,7 +96,7 @@ class MobilePerformanceSystem {
 
   /// Get an Offset from pool
   Offset getOffset(double dx, double dy) {
-    final offset = _offsetPool.acquire();
+    _offsetPool.acquire();
     return Offset(dx, dy);
   }
 

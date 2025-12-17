@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
@@ -16,7 +15,7 @@ class GameStateMachine extends EventHandlerSystem {
   Duration _stateDuration = Duration.zero;
 
   // State-specific data
-  Map<String, dynamic> _stateData = {};
+  final Map<String, dynamic> _stateData = {};
 
   // Transition rules
   final Map<GameState, Set<GameState>> _allowedTransitions = {
@@ -215,11 +214,11 @@ class GameStateMachine extends EventHandlerSystem {
   }
 
   void _logDebug(String message) {
-    print('[GameStateMachine] $message');
+    // Debug logging disabled for production
   }
 
   void _logError(String message) {
-    print('[GameStateMachine ERROR] $message');
+    // Error logging disabled for production
   }
 
   /// State validation for debugging

@@ -2,11 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
+import 'package:logging/logging.dart';
 
 /// Game loop safety system that prevents crashes and handles errors gracefully
 /// Provides comprehensive error recovery and state protection
 class GameLoopSafety {
   // final GameStateController _gameStateController; // Unused but kept for future integration
+
+  // Logger instance
+  static final _log = Logger('GameLoopSafety');
 
   // Error tracking
   final List<GameLoopError> _errorHistory = [];
@@ -26,7 +30,6 @@ class GameLoopSafety {
 
   // Debug state
   static bool _debugMode = false;
-  static const String _debugPrefix = '[GameLoopSafety]';
 
   GameLoopSafety() {
     _debugMode = !kReleaseMode;
@@ -45,7 +48,7 @@ class GameLoopSafety {
       // Check if we're in critical error state
       if (_isInCriticalError) {
         if (!silent && _debugMode) {
-          print('$_debugPrefix BLOCKED: $operationName (critical error active)');
+          _log.warning('BLOCKED: $operationName (critical error active)');
         }
         return fallbackValue ?? _getDefaultFallback<T>();
       }
@@ -53,7 +56,7 @@ class GameLoopSafety {
       // Check safe mode
       if (_isSafeModeActive && !operationName.startsWith('safe_')) {
         if (!silent && _debugMode) {
-          print('$_debugPrefix BLOCKED: $operationName (safe mode active)');
+          _log.warning('BLOCKED: $operationName (safe mode active)');
         }
         return fallbackValue ?? _getDefaultFallback<T>();
       }
@@ -94,7 +97,7 @@ class GameLoopSafety {
       // Check canvas validity
       if (size.isEmpty) {
         if (_debugMode) {
-          print('$_debugPrefix Invalid canvas or size');
+          _log.warning('Invalid canvas or size');
         }
         return;
       }
@@ -128,8 +131,8 @@ class GameLoopSafety {
       return result;
     } catch (e, stackTrace) {
       if (_debugMode) {
-        print('$_debugPrefix Failed to load asset $assetName: $e');
-        print('$_debugPrefix Stack trace: $stackTrace');
+        _log.severe('Failed to load asset $assetName: $e');
+        _log.fine('Stack trace: $stackTrace');
       }
 
       return fallbackValue;
@@ -145,7 +148,7 @@ class GameLoopSafety {
       audioFunction();
     } catch (e) {
       if (_debugMode) {
-        print('$_debugPrefix Audio error in $operationName: $e');
+        _log.warning('Audio error in $operationName: $e');
       }
       // Audio errors should never crash the game
     }
@@ -199,7 +202,7 @@ class GameLoopSafety {
     _consecutiveErrors = 0;
 
     if (_debugMode) {
-      print('$_debugPrefix Safe mode reset');
+      _log.info('Safe mode reset');
     }
 
     GameEventBus.instance.fire(SafeModeResetEvent());
@@ -211,7 +214,7 @@ class GameLoopSafety {
       _isSafeModeActive = true;
 
       if (_debugMode) {
-        print('$_debugPrefix Safe mode activated: $reason');
+        _log.warning('Safe mode activated: $reason');
       }
 
       GameEventBus.instance.fire(SafeModeActivatedEvent(reason));
@@ -275,9 +278,9 @@ class GameLoopSafety {
 
     // Log in debug mode
     if (_debugMode) {
-      print('$_debugPrefix ERROR in $operationName: $error');
-      print('$_debugPrefix Stack trace: $stackTrace');
-      print('$_debugPrefix Consecutive errors: $_consecutiveErrors');
+      _log.severe('ERROR in $operationName: $error');
+      _log.fine('Stack trace: $stackTrace');
+      _log.warning('Consecutive errors: $_consecutiveErrors');
     }
 
     // Check if we need to enter critical error state
@@ -300,8 +303,8 @@ class GameLoopSafety {
 
   void _handleRenderError(Object error, StackTrace stackTrace) {
     if (_debugMode) {
-      print('$_debugPrefix RENDER ERROR: $error');
-      print('$_debugPrefix Stack trace: $stackTrace');
+      _log.severe('RENDER ERROR: $error');
+      _log.fine('Stack trace: $stackTrace');
     }
 
     // Create render error record
@@ -324,9 +327,9 @@ class GameLoopSafety {
     _isInCriticalError = true;
 
     if (_debugMode) {
-      print('$_debugPrefix CRITICAL ERROR: Entering safe mode');
-      print('$_debugPrefix Error: ${error.error}');
-      print('$_debugPrefix Operation: ${error.operationName}');
+      _log.severe('CRITICAL ERROR: Entering safe mode');
+      _log.severe('Error: ${error.error}');
+      _log.severe('Operation: ${error.operationName}');
     }
 
     // Force safe mode

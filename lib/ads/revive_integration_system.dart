@@ -7,7 +7,6 @@ import 'package:flutter_neon_runner/game/systems/game_state_controller.dart';
 import 'package:flutter_neon_runner/game/systems/player_system.dart';
 import 'package:flutter_neon_runner/game/systems/audio_system.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/config/build_config.dart';
 import 'package:flutter_neon_runner/utils/debug_utils.dart';
 
 /// Integration system that coordinates all revive-related functionality

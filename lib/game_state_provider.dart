@@ -15,6 +15,11 @@ class GameStateProvider extends ChangeNotifier {
     _game = game;
   }
 
+  // Alias for setGame to maintain compatibility with tests
+  void initialize(NeonRunnerGame game) {
+    setGame(game);
+  }
+
   NeonRunnerGame get gameInstance => _game;
 
   // --- State Management ---
@@ -112,12 +117,24 @@ class GameStateProvider extends ChangeNotifier {
     }
   }
 
+  void submitScore(int score) {
+    // Mock score submission for tests
+    String playerId = _game.userId ?? const Uuid().v4();
+    _game.userId ??= playerId;
+    String playerName = 'ANONYMOUS';
+    leaderboardService.submitScore(playerId, playerName, score);
+  }
+
   void showLeaderboard() {
     updateGameState(GameState.leaderboardView);
   }
 
   void backToPauseMenu() {
     updateGameState(GameState.paused);
+  }
+
+  void returnToMenu() {
+    updateGameState(GameState.menu);
   }
 
   @override

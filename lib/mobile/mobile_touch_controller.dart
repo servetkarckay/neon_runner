@@ -379,7 +379,7 @@ class MobileUIPatterns {
           const SizedBox(height: 8),
           _buildStatRow('HIGHSCORE', '$highscore', GameConfig.primaryNeonColor),
           const SizedBox(height: 8),
-          _buildStatRow('SPEED', '${speed.toStringAsFixed(1)}', Colors.cyan),
+          _buildStatRow('SPEED', speed.toStringAsFixed(1), Colors.cyan),
         ],
       ),
     );

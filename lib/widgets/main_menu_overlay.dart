@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_neon_runner/game_state_provider.dart';
-import 'package:flutter_neon_runner/widgets/common/menu_button.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 
@@ -139,7 +138,7 @@ class _MainMenuOverlayState extends State<MainMenuOverlay>
   }
 
   Widget _buildStartButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 80,
       child: ElevatedButton(
@@ -217,7 +216,7 @@ class _MainMenuOverlayState extends State<MainMenuOverlay>
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 60,
       child: ElevatedButton(

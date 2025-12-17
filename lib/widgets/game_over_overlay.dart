@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:flutter_neon_runner/game_state_provider.dart';
-import 'package:flutter_neon_runner/widgets/common/menu_button.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 

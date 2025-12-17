@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
-import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/local_storage_service.dart';
 
 /// Comprehensive leaderboard system with Redis-backed validation
@@ -173,7 +172,7 @@ class LeaderboardSystem extends EventHandlerSystem implements PausableSystem {
     int limit = 50,
     int offset = 0,
   }) async {
-    final cacheKey = '${leaderboardId}_${limit}_${offset}';
+    final cacheKey = '$leaderboardId${limit}_$offset';
 
     try {
       // Check cache first
@@ -463,7 +462,7 @@ class LeaderboardSystem extends EventHandlerSystem implements PausableSystem {
 
         entries.add(LeaderboardEntry(
           rank: rank,
-          playerName: 'Player${rank}',
+          playerName: 'Player$rank',
           score: score,
           userId: 'user_$rank',
           timestamp: DateTime.now().subtract(Duration(minutes: rank * 5)),
@@ -524,14 +523,60 @@ class LeaderboardSystem extends EventHandlerSystem implements PausableSystem {
 
   Future<void> _loadCachedLeaderboards() async {
     try {
-      // TODO: Implement proper cache loading with type conversion
-      // For now, initialize empty caches
+      // Load cached leaderboards from LocalStorageService
+      final allLeaderboardIds = [_dailyLeaderboardId, _weeklyLeaderboardId, _allTimeLeaderboardId];
+
+      for (final leaderboardId in allLeaderboardIds) {
+        // Get cached maps from storage
+        final cachedMaps = await _localStorageService.getLeaderboardCache(leaderboardId);
+
+        // Convert maps back to LeaderboardEntry objects
+        final entries = cachedMaps.map((map) {
+          // Handle type conversion safely
+          final rank = map['rank'] is int ? map['rank'] as int : int.tryParse(map['rank'].toString()) ?? 0;
+          final playerName = map['playerName']?.toString() ?? 'Unknown';
+          final score = map['score'] is int ? map['score'] as int : int.tryParse(map['score'].toString()) ?? 0;
+          final userId = map['userId']?.toString() ?? '';
+
+          // Handle timestamp conversion
+          int timestampMs = 0;
+          if (map['timestamp'] is int) {
+            timestampMs = map['timestamp'] as int;
+          } else if (map['timestamp'] is String) {
+            timestampMs = int.tryParse(map['timestamp'] as String) ?? 0;
+          }
+
+          final timestamp = DateTime.fromMillisecondsSinceEpoch(timestampMs);
+
+          // Handle metadata conversion
+          Map<String, dynamic> metadata = {};
+          if (map['metadata'] is Map) {
+            metadata = Map<String, dynamic>.from(map['metadata']);
+          }
+
+          return LeaderboardEntry(
+            rank: rank,
+            playerName: playerName,
+            score: score,
+            userId: userId,
+            timestamp: timestamp,
+            metadata: metadata,
+          );
+        }).toList();
+
+        // Store in cache with timestamp
+        _cachedLeaderboards[leaderboardId] = entries;
+        _cacheTimestamps[leaderboardId] = DateTime.now();
+      }
+
+      _logDebug('Loaded ${allLeaderboardIds.length} cached leaderboards');
+    } catch (e) {
+      _logError('Error loading cached leaderboards: $e');
+
+      // Initialize empty caches as fallback
       _cachedLeaderboards[_dailyLeaderboardId] = [];
       _cachedLeaderboards[_weeklyLeaderboardId] = [];
       _cachedLeaderboards[_allTimeLeaderboardId] = [];
-
-    } catch (e) {
-      _logError('Error loading cached leaderboards: $e');
     }
   }
 
@@ -595,11 +640,11 @@ class LeaderboardSystem extends EventHandlerSystem implements PausableSystem {
   }
 
   void _logDebug(String message) {
-    print('[LeaderboardSystem] DEBUG: $message');
+    // Debug logging disabled for production
   }
 
   void _logError(String message) {
-    print('[LeaderboardSystem] ERROR: $message');
+    // Error logging disabled for production
   }
 
   @override

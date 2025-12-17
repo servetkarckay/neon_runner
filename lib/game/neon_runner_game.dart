@@ -46,7 +46,6 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
   int score = 0;
   int frames = 0;
   int highscore = 0;
-  int nextSpawn = 0;
   bool inputLock = false;
   bool isTransitioning = false;
   bool scoreGlitch = false;
@@ -84,9 +83,12 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
 
     // Components that depend on the game instance
     _playerComponent = PlayerComponent();
-    _obstacleManager = ObstacleManager(this, _obstacleSystem);
+    _obstacleManager = ObstacleManager(_obstacleSystem);
     _powerUpManager = PowerUpManager(this);
     _particleManager = ParticleManager();
+
+    // Set PowerUpManager reference in ObstacleSystem
+    _obstacleSystem.setPowerUpManager(_powerUpManager);
 
     // Add components to the game tree
     addAll([
@@ -139,9 +141,6 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
     } else {
       if (speed < GameConfig.maxSpeed) {
         speed += GameConfig.speedIncrement;
-      }
-      if (frames >= nextSpawn) {
-        _spawnObstacleAndPowerUp();
       }
     }
 
@@ -492,58 +491,7 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
     }
   }
 
-  void _spawnObstacleAndPowerUp() {
-    // TODO: This old spawning logic conflicts with ObstacleSystem
-    // ObstacleSystem already handles spawning internally
-    // For now, let's get the most recent obstacle if available
-    if (_obstacleManager.activeObstacles.isNotEmpty) {
-      final obstacle = _obstacleManager.activeObstacles.last;
-
-      bool powerUpSpawned = false;
-      if (obstacle.type == ObstacleType.hazardZone &&
-          Random().nextDouble() < 0.35) {
-        final puY = obstacle.y - 70;
-        final absoluteX = obstacle.x + obstacle.width / 2;
-        final relativeOffset = absoluteX - GameConfig.baseWidth;
-        _powerUpManager.spawnPowerUp(relativeOffset, fixedY: puY);
-        powerUpSpawned = true;
-      } else if ((obstacle.type == ObstacleType.platform ||
-              obstacle.type == ObstacleType.movingPlatform) &&
-          Random().nextDouble() < 0.4) {
-        final puY = obstacle.y - 40;
-        final absoluteX = obstacle.x + obstacle.width / 2;
-        final relativeOffset = absoluteX - GameConfig.baseWidth;
-        _powerUpManager.spawnPowerUp(relativeOffset, fixedY: puY);
-        powerUpSpawned = true;
-      } else if (obstacle.type == ObstacleType.laserGrid &&
-          Random().nextDouble() < 0.4) {
-        final lg = obstacle as LaserGridObstacleData;
-        final puY = lg.gapY;
-        final absoluteX = obstacle.x + obstacle.width / 2;
-        final relativeOffset = absoluteX - GameConfig.baseWidth;
-        _powerUpManager.spawnPowerUp(relativeOffset, fixedY: puY);
-        powerUpSpawned = true;
-      }
-
-      if (!powerUpSpawned &&
-          Random().nextDouble() < GameConfig.powerUpSpawnChance) {
-        _powerUpManager.spawnPowerUp((nextSpawn * speed * 0.4).floorToDouble());
-      }
-
-      final minGap =
-          (GameConfig.spawnRateMin - min((speed - GameConfig.baseSpeed) * 2, 30))
-              .toInt();
-      final maxGap = GameConfig.spawnRateMax;
-      int gap = Random().nextInt(maxGap - minGap + 1) + minGap;
-
-      if (obstacle.type == ObstacleType.hazardZone) gap += 20;
-      if (obstacle.type == ObstacleType.movingPlatform) gap += 15;
-      if (obstacle.type == ObstacleType.laserGrid) gap += 30;
-
-      nextSpawn = frames + gap;
-    }
-  }
-
+  
   void performJump() {
     _playerData.isJumping = true;
     _playerData.isHoldingJump = true;
@@ -1087,14 +1035,12 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
     frames = 0;
     speed = GameConfig.baseSpeed;
     inputLock = false;
-    nextSpawn = 0;
     scoreGlitch = false;
     isTransitioning = false;
     _hudUpdateCounter = 0;
 
     tutorialActive = !_localStorageService.getTutorialSeen();
     tutorialState = 'INTRO';
-    nextSpawn = 100;
 
     paused = false; // Unpause the game to start the update loop
   }

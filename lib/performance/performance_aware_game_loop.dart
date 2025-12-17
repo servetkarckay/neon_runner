@@ -1,19 +1,18 @@
-import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flame/game.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
-import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
 import 'package:flutter_neon_runner/performance/game_loop_safety.dart';
 import 'package:flutter_neon_runner/performance/mobile_performance_system.dart';
+import 'package:logging/logging.dart';
 
 /// Performance-aware game loop controller optimized for mobile devices
 /// Ensures stable 60 FPS on mid-range Android devices
 class PerformanceAwareGameLoop {
   final GameLoopSafety _safety;
   final MobilePerformanceSystem _performance;
+  static final _log = Logger('PerformanceAwareGameLoop');
 
   // Frame timing control
   double _accumulatedTime = 0.0;
@@ -22,7 +21,6 @@ class PerformanceAwareGameLoop {
 
   // Performance tracking
   DateTime _lastStatsUpdate = DateTime.now();
-  int _frameCount = 0;
 
   // Adaptive settings
   bool _adaptiveFrameSkip = true;
@@ -175,7 +173,7 @@ class PerformanceAwareGameLoop {
       } catch (e) {
         // Continue rendering other components
         if (kDebugMode) {
-          print('Render error in ${component.runtimeType}: $e');
+          _log.warning('Render error in ${component.runtimeType}: $e');
         }
       }
     }
@@ -232,22 +230,20 @@ class PerformanceAwareGameLoop {
 
   /// Update performance statistics
   void updatePerformanceStats() {
-    _frameCount++;
-
     final now = DateTime.now();
     if (now.difference(_lastStatsUpdate).inSeconds >= 1) {
       final stats = _performance.getPerformanceStats();
 
       // Log performance stats in debug mode
       if (kDebugMode) {
-        print('=== PERFORMANCE STATS ===');
-        print('FPS: ${stats.currentFPS.toStringAsFixed(1)} (avg: ${stats.averageFPS.toStringAsFixed(1)})');
-        print('Frame time: ${stats.worstFrameTime.toStringAsFixed(2)}ms (worst)');
-        print('Update: ${stats.averageUpdateTime.toStringAsFixed(2)}ms (avg)');
-        print('Render: ${stats.averageRenderTime.toStringAsFixed(2)}ms (avg)');
-        print('Allocations: ${stats.allocationCount}');
-        print('Pools: V2=${stats.vector2PoolSize}, R=${stats.rectPoolSize}, P=${stats.paintPoolSize}');
-        print('Performance Level: ${stats.performanceLevel}');
+        _log.info('=== PERFORMANCE STATS ===');
+        _log.info('FPS: ${stats.currentFPS.toStringAsFixed(1)} (avg: ${stats.averageFPS.toStringAsFixed(1)})');
+        _log.info('Frame time: ${stats.worstFrameTime.toStringAsFixed(2)}ms (worst)');
+        _log.info('Update: ${stats.averageUpdateTime.toStringAsFixed(2)}ms (avg)');
+        _log.info('Render: ${stats.averageRenderTime.toStringAsFixed(2)}ms (avg)');
+        _log.info('Allocations: ${stats.allocationCount}');
+        _log.info('Pools: V2=${stats.vector2PoolSize}, R=${stats.rectPoolSize}, P=${stats.paintPoolSize}');
+        _log.info('Performance Level: ${stats.performanceLevel}');
       }
 
       // Check for performance issues
@@ -268,7 +264,6 @@ class PerformanceAwareGameLoop {
   /// Reset performance metrics
   void resetPerformance() {
     _performance.reset();
-    _frameCount = 0;
     _accumulatedTime = 0.0;
   }
 

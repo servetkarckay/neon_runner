@@ -5,6 +5,7 @@ import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/game/systems/spawner_system.dart'; // New import
+import 'package:flutter_neon_runner/game/powerup_manager.dart'; // Import PowerUpManager
 
 /// System managing obstacle spawning, movement, and lifecycle
 class ObstacleSystem extends EventHandlerSystem implements PausableSystem, ResettableSystem {
@@ -20,12 +21,18 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
 
   // Spawner configuration
   late SpawnerSystem _spawnerSystem; // Changed from SpawnerUtils
+  PowerUpManager? _powerUpManager; // Reference to PowerUpManager
 
   @override
   String get systemName => 'ObstacleSystem';
 
   List<ObstacleData> get activeObstacles => List.unmodifiable(_activeObstacles);
   int get frames => _frames;
+
+  /// Set the PowerUpManager reference
+  void setPowerUpManager(PowerUpManager powerUpManager) {
+    _powerUpManager = powerUpManager;
+  }
 
   /// Manually add an obstacle (used for tutorial system)
   void addObstacle(ObstacleData obstacle) {
@@ -170,6 +177,45 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
 
     _activeObstacles.add(obstacle);
     GameEventBus.instance.fire(ObstacleSpawnedEvent(obstacle));
+
+    // Spawn power-ups based on obstacle type (moved from NeonRunnerGame)
+    _spawnPowerUpForObstacle(obstacle);
+  }
+
+  void _spawnPowerUpForObstacle(ObstacleData obstacle) {
+    if (_powerUpManager == null) return;
+
+    bool powerUpSpawned = false;
+    if (obstacle.type == ObstacleType.hazardZone &&
+        Random().nextDouble() < 0.35) {
+      final puY = obstacle.y - 70;
+      final absoluteX = obstacle.x + obstacle.width / 2;
+      final relativeOffset = absoluteX - GameConfig.baseWidth;
+      _powerUpManager!.spawnPowerUp(relativeOffset, fixedY: puY);
+      powerUpSpawned = true;
+    } else if ((obstacle.type == ObstacleType.platform ||
+            obstacle.type == ObstacleType.movingPlatform) &&
+        Random().nextDouble() < 0.4) {
+      final puY = obstacle.y - 40;
+      final absoluteX = obstacle.x + obstacle.width / 2;
+      final relativeOffset = absoluteX - GameConfig.baseWidth;
+      _powerUpManager!.spawnPowerUp(relativeOffset, fixedY: puY);
+      powerUpSpawned = true;
+    } else if (obstacle.type == ObstacleType.laserGrid &&
+        Random().nextDouble() < 0.4) {
+      final lg = obstacle as LaserGridObstacleData;
+      final puY = lg.gapY;
+      final absoluteX = obstacle.x + obstacle.width / 2;
+      final relativeOffset = absoluteX - GameConfig.baseWidth;
+      _powerUpManager!.spawnPowerUp(relativeOffset, fixedY: puY);
+      powerUpSpawned = true;
+    }
+
+    if (!powerUpSpawned &&
+        Random().nextDouble() < GameConfig.powerUpSpawnChance) {
+      final gapUntilNextSpawn = _nextSpawn - _frames;
+      _powerUpManager!.spawnPowerUp((gapUntilNextSpawn * _currentSpeed * 0.4).floorToDouble());
+    }
   }
 
   void _updateObstacleProperties(ObstacleData obstacle, dynamic spawnConfig) {

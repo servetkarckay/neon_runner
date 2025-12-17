@@ -1,22 +1,21 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter_neon_runner/config/game_config.dart';
-import 'package:flutter_neon_runner/game/systems/game_state_controller.dart';
 import 'package:flutter_neon_runner/leaderboard/leaderboard_system.dart';
 import 'package:flutter_neon_runner/leaderboard/redis_validator.dart';
+import 'package:flutter_neon_runner/game_state_provider.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 
 /// Integration system that coordinates leaderboard and Redis validation
 /// Ensures seamless operation, proper error handling, and offline resilience
 class LeaderboardIntegration {
-  final GameStateController _gameStateController;
   late LeaderboardSystem _leaderboardSystem;
   late RedisValidator _redisValidator;
+  GameStateProvider? _gameStateProvider;
 
   // Integration state
   bool _isInitialized = false;
   bool _hasPendingSubmission = false;
-  String? _pendingSubmissionId;
 
   // Submission tracking
   final Map<String, SubmissionAttempt> _submissionAttempts = {};
@@ -26,9 +25,18 @@ class LeaderboardIntegration {
   Timer? _syncTimer;
   static const Duration _syncInterval = Duration(minutes: 5);
 
-  LeaderboardIntegration({
-    required GameStateController gameStateController,
-  }) : _gameStateController = gameStateController;
+  LeaderboardIntegration();
+
+  /// Set the GameStateProvider to listen for game state changes
+  void setGameStateProvider(GameStateProvider gameStateProvider) {
+    // Remove old listener if exists
+    if (_gameStateProvider != null) {
+      _gameStateProvider!.removeListener(_onGameStateChanged);
+    }
+
+    _gameStateProvider = gameStateProvider;
+    _gameStateProvider!.addListener(_onGameStateChanged);
+  }
 
   // Getters
   bool get isInitialized => _isInitialized;
@@ -112,7 +120,6 @@ class LeaderboardIntegration {
       if (submissionResult.pending) {
         // Mark as pending for Redis validation
         _hasPendingSubmission = true;
-        _pendingSubmissionId = submissionId;
 
         // Start background validation
         _startBackgroundValidation(submissionId);
@@ -208,8 +215,8 @@ class LeaderboardIntegration {
     _logDebug('Force syncing pending submissions...');
 
     try {
-      // TODO: Implement syncPendingScores in RedisValidator
-      // await _redisValidator.syncPendingScores();
+      // Sync Redis validator pending scores
+      await _redisValidator.syncPendingScores();
 
       // Sync leaderboard system queue
       await _leaderboardSystem.syncPendingScores();
@@ -246,8 +253,47 @@ class LeaderboardIntegration {
   // Private methods
 
   void _subscribeToEvents() {
-    // TODO: Implement proper state change listening
-    // _gameStateController.addListener(_onGameStateChanged);
+    // State change listening is handled by setGameStateProvider method
+    // This method is kept for compatibility
+  }
+
+  /// Handle game state changes
+  void _onGameStateChanged() {
+    if (_gameStateProvider == null) return;
+
+    final currentGameState = _gameStateProvider!.currentGameState;
+
+    // Handle game over state - trigger score submission
+    if (currentGameState == GameState.gameOver) {
+      _handleGameOver();
+    }
+    // Handle game restart - clear pending submissions
+    else if (currentGameState == GameState.menu) {
+      _clearPendingSubmissions();
+    }
+  }
+
+  /// Handle game over event
+  void _handleGameOver() {
+    if (_gameStateProvider == null) return;
+
+    final finalScore = _gameStateProvider!.score.value;
+    _logDebug('Game over detected with score: $finalScore');
+
+    // Trigger score submission if score is meaningful
+    if (finalScore > 0) {
+      // The actual submission will be handled by the LeaderboardService
+      // This method just logs the event for now
+    }
+  }
+
+  /// Clear pending submissions when game restarts
+  void _clearPendingSubmissions() {
+    final pendingCount = _submissionAttempts.length;
+    if (pendingCount > 0) {
+      _logDebug('Clearing $pendingCount pending submissions');
+      _submissionAttempts.clear();
+    }
   }
 
 
@@ -328,7 +374,6 @@ class LeaderboardIntegration {
 
     if (pendingCount == 0) {
       _hasPendingSubmission = false;
-      _pendingSubmissionId = null;
     }
   }
 
@@ -372,17 +417,23 @@ class LeaderboardIntegration {
   }
 
   void _logDebug(String message) {
-    print('[LeaderboardIntegration] DEBUG: $message');
+    // Debug logging disabled for production
   }
 
   void _logError(String message) {
-    print('[LeaderboardIntegration] ERROR: $message');
+    // Error logging disabled for production
   }
 
   void dispose() {
     _syncTimer?.cancel();
     _submissionAttempts.clear();
-    // TODO: Implement proper cleanup when listeners are added
+
+    // Remove GameStateProvider listener if it was added
+    if (_gameStateProvider != null) {
+      _gameStateProvider!.removeListener(_onGameStateChanged);
+      _gameStateProvider = null;
+    }
+
     _leaderboardSystem.dispose();
     _redisValidator.dispose();
   }

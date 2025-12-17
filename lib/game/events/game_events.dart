@@ -266,3 +266,28 @@ class GameOverEnterEvent extends GameEvent {
     required this.highscore,
   });
 }
+
+// Power-up Events
+class PowerUpCollectedEvent extends GameEvent {
+  final String powerUpType;
+  final double x;
+  final double y;
+
+  PowerUpCollectedEvent(this.powerUpType, this.x, this.y);
+}
+
+// Platform Events
+class PlatformLandedEvent extends GameEvent {
+  final double x;
+  final double y;
+
+  PlatformLandedEvent(this.x, this.y);
+}
+
+// Shield Events
+class ShieldBreakEvent extends GameEvent {
+  final double x;
+  final double y;
+
+  ShieldBreakEvent(this.x, this.y);
+}

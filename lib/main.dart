@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 import 'package:flutter_neon_runner/game/neon_runner_game.dart';
@@ -13,8 +14,33 @@ import 'package:flutter_neon_runner/widgets/mobile_controls_overlay.dart'; // Im
 import 'package:flutter_neon_runner/widgets/vignette_effect.dart'; // Import VignetteEffect
 import 'package:flutter_neon_runner/widgets/settings_overlay.dart'; // Import SettingsOverlay
 import 'package:flutter/services.dart'; // Added this import
+import 'package:logging/logging.dart';
 
 void main() {
+  // Configure logging
+  Logger.root.level = kDebugMode ? Level.ALL : Level.WARNING;
+  Logger.root.onRecord.listen((record) {
+    if (kDebugMode) {
+      // In debug mode, print with more detailed formatting
+      // ignore: avoid_print - This is the logging framework output handler
+      print('${record.level.name}: ${record.time}: ${record.loggerName}: ${record.message}');
+      if (record.error != null) {
+        // ignore: avoid_print - This is the logging framework output handler
+        print('  Error: ${record.error}');
+      }
+      if (record.stackTrace != null) {
+        // ignore: avoid_print - This is the logging framework output handler
+        print('  Stack trace: ${record.stackTrace}');
+      }
+    } else {
+      // In release mode, only log warnings and errors
+      if (record.level.value >= Level.WARNING.value) {
+        // ignore: avoid_print - This is the logging framework output handler
+        print('${record.level.name}: ${record.loggerName}: ${record.message}');
+      }
+    }
+  });
+
   runApp(const MyGameApp());
 }
 

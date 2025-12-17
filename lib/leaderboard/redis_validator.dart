@@ -4,15 +4,19 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 import 'package:flutter_neon_runner/leaderboard/leaderboard_system.dart';
+import 'package:logging/logging.dart';
 
 /// Redis-based validation system for atomic operations and enhanced security
 /// Provides server-side validation, duplicate prevention, and integrity checks
 class RedisValidator {
   static const String _keyPrefix = 'neon_runner:';
-  static const String _scoreSubmissionsKey = '${_keyPrefix}score_submissions';
-  static const String _validationKey = '${_keyPrefix}validation';
-  static const String _leaderboardKey = '${_keyPrefix}leaderboard';
-  static const String _playerDataKey = '${_keyPrefix}player_data';
+  static const String _scoreSubmissionsKey = '$_keyPrefix' 'score_submissions';
+  static const String _validationKey = '$_keyPrefix' 'validation';
+  static const String _leaderboardKey = '$_keyPrefix' 'leaderboard';
+  static const String _playerDataKey = '$_keyPrefix' 'player_data';
+
+  // Logger instance
+  static final _log = Logger('RedisValidator');
 
   // Redis connection simulation
   bool _isConnected = false;
@@ -154,6 +158,68 @@ class RedisValidator {
     }
   }
 
+  /// Synchronize pending scores from local cache to Redis
+  Future<void> syncPendingScores() async {
+    try {
+      if (!_isConnected) {
+        _log.warning('Redis unavailable for syncing pending scores');
+        return;
+      }
+
+      // Get all pending submission keys
+      final pendingKeys = _redisStore.keys
+          .where((key) => key.startsWith('$_keyPrefix' 'pending:'))
+          .toList();
+
+      int synced = 0;
+      int failed = 0;
+
+      for (final key in pendingKeys) {
+        try {
+          final pendingData = _redisStore[key];
+          if (pendingData == null) continue;
+
+          // Parse pending score data
+          final data = jsonDecode(pendingData) as Map<String, dynamic>;
+          final validationData = ScoreValidationData(
+            userId: data['userId'] as String,
+            score: data['score'] as int,
+            submissionId: data['submissionId'] as String,
+            timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
+            hash: data['hash'] as String,
+            playerName: data['playerName'] as String,
+            metadata: data['metadata'] as Map<String, dynamic>? ?? {},
+          );
+
+          // Try to submit to Redis
+          final result = await validateAndSubmitScore(
+            validationData: validationData,
+            leaderboardId: data['leaderboardId'] as String? ?? _allTimeLeaderboardId,
+          );
+
+          if (result.success) {
+            // Remove from pending queue
+            _redisStore.remove(key);
+            synced++;
+          } else {
+            failed++;
+            // If not a duplicate, keep for retry
+            if (result.errorMessage?.contains('Duplicate') == true) {
+              _redisStore.remove(key);
+            }
+          }
+        } catch (e) {
+          _logError('Error syncing pending score for key $key: $e');
+          failed++;
+        }
+      }
+
+      _log.info('Synced $synced pending scores, $failed failed');
+    } catch (e) {
+      _logError('Error during syncPendingScores: $e');
+    }
+  }
+
   /// Batch validate multiple scores (for admin tools)
   Future<BatchValidationResult> batchValidateScores(
     List<ScoreValidationData> scores,
@@ -213,7 +279,7 @@ class RedisValidator {
   }
 
   Future<bool> _isDuplicateSubmission(ScoreValidationData validationData) async {
-    final submissionKey = '${_scoreSubmissionsKey}:${validationData.submissionId}';
+    final submissionKey = '$_scoreSubmissionsKey:${validationData.submissionId}';
 
     // Simulate Redis EXISTS operation
     return _redisStore.containsKey(submissionKey);
@@ -256,7 +322,7 @@ class RedisValidator {
 
   Future<bool> _isSuspiciousScore(ScoreValidationData validationData) async {
     // Check validation cache for previous submissions
-    final userKey = '${_validationKey}:${validationData.userId}';
+    final userKey = '$_validationKey:${validationData.userId}';
     final cachedRecord = _validationCache[userKey];
 
     if (cachedRecord != null) {
@@ -279,7 +345,7 @@ class RedisValidator {
   }
 
   Future<bool> _isRateLimited(String userId) async {
-    final rateLimitKey = '${_validationKey}:rate_limit:$userId';
+    final rateLimitKey = '$_validationKey:rate_limit:$userId';
 
     // Simulate Redis INCR and EXPIRE
     final currentCount = (_redisStore[rateLimitKey] ?? '0').hashCode;
@@ -309,7 +375,7 @@ class RedisValidator {
       final currentRank = _findPlayerRank(entries, validationData.userId);
 
       // Add score to sorted set
-      _redisStore['${leaderboardKey}:$member'] = score.toString();
+      _redisStore['$leaderboardKey:$member'] = score.toString();
 
       // Update player data
       final playerDataKey = _generatePlayerDataKey(validationData.userId);
@@ -337,7 +403,7 @@ class RedisValidator {
   }
 
   Future<void> _recordSubmission(ScoreValidationData validationData) async {
-    final submissionKey = '${_scoreSubmissionsKey}:${validationData.submissionId}';
+    final submissionKey = '$_scoreSubmissionsKey:${validationData.submissionId}';
 
     // Simulate Redis SET with expiry
     _redisStore[submissionKey] = jsonEncode({
@@ -349,7 +415,7 @@ class RedisValidator {
     });
 
     // Update validation cache
-    final userKey = '${_validationKey}:${validationData.userId}';
+    final userKey = '$_validationKey:${validationData.userId}';
     _validationCache[userKey] = ScoreValidationRecord(
       userId: validationData.userId,
       lastScore: validationData.score,
@@ -359,7 +425,7 @@ class RedisValidator {
   }
 
   Future<void> _updatePlayerStatistics(ScoreValidationData validationData) async {
-    final statsKey = '${_playerDataKey}:stats:${validationData.userId}';
+    final statsKey = '$_playerDataKey:stats:${validationData.userId}';
 
     // Simulate Redis HINCRBY operations
     final currentStats = _redisStore[statsKey] ?? jsonEncode({
@@ -462,15 +528,15 @@ class RedisValidator {
   // Utility methods
 
   String _generateLockKey(String userId) {
-    return '${_validationKey}:lock:$userId';
+    return '$_validationKey:lock:$userId';
   }
 
   String _generateLeaderboardKey(String leaderboardId) {
-    return '${_leaderboardKey}:$leaderboardId';
+    return '$_leaderboardKey:$leaderboardId';
   }
 
   String _generatePlayerDataKey(String userId) {
-    return '${_playerDataKey}:$userId';
+    return '$_playerDataKey:$userId';
   }
 
   String _generateScoreHash(int score, String userId, String submissionId) {
@@ -479,7 +545,7 @@ class RedisValidator {
   }
 
   void _logError(String message) {
-    print('[RedisValidator] ERROR: $message');
+    _log.severe(message);
   }
 
   void dispose() {

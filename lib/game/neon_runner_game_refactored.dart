@@ -2,8 +2,6 @@ import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_neon_runner/config/game_config.dart';
-import 'package:flutter_neon_runner/game/events/game_events.dart';
 import 'package:flutter_neon_runner/game/systems/game_loop_controller.dart';
 import 'package:flutter_neon_runner/game/systems/ui_system.dart';
 import 'package:flutter_neon_runner/game_state_provider.dart';
@@ -11,7 +9,6 @@ import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/ads_controller.dart';
 import 'package:flutter_neon_runner/local_storage_service.dart';
 import 'package:flutter_neon_runner/game/systems/game_state_controller.dart';
-import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
 import 'package:flutter_neon_runner/config/build_config.dart';
 
 /// Refactored Neon Runner Game using modular system architecture

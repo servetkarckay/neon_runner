@@ -1,35 +1,36 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_neon_runner/config/build_config.dart';
+import 'package:logging/logging.dart';
 
 /// Debug utilities for development
 class DebugUtils {
+  static final _logger = Logger('DebugUtils');
+  static final _networkLogger = Logger('Network');
+  static final _perfLogger = Logger('Performance');
+
   static void log(String message, {String? tag}) {
     if (BuildConfig.enableLogs) {
-      final prefix = tag != null ? '[$tag] ' : '';
-      print('$prefix$message');
+      final logger = tag != null ? Logger(tag) : _logger;
+      logger.info(message);
     }
   }
 
   static void logError(Object error, StackTrace? stackTrace, {String? tag}) {
     if (BuildConfig.enableVerboseErrors) {
-      final prefix = tag != null ? '[$tag] ' : '';
-      print('$prefix$error');
-      if (stackTrace != null) {
-        print('$prefix$stackTrace');
-      }
+      final logger = tag != null ? Logger(tag) : _logger;
+      logger.severe(error.toString(), stackTrace);
     }
   }
 
   static void logPerformance(String metric, dynamic value) {
     if (BuildConfig.enablePerformanceMetrics) {
-      print('[PERF] $metric: $value');
+      _perfLogger.info('$metric: $value');
     }
   }
 
   static void logNetwork(String request, String response) {
     if (BuildConfig.enableNetworkLogging) {
-      print('[NET] Request: $request');
-      print('[NET] Response: $response');
+      _networkLogger.info('Request: $request');
+      _networkLogger.info('Response: $response');
     }
   }
 

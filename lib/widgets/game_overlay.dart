@@ -242,10 +242,9 @@ class _GameOverlayState extends State<GameOverlay> {
   }
 
   Widget _buildMobileControls(GameStateProvider gameStateProvider) {
-    return Container(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
           // Sound Toggle
           GestureDetector(
             onTap: () {
@@ -273,90 +272,6 @@ class _GameOverlayState extends State<GameOverlay> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Helper widget for displaying animated score
-class _ScoreDisplay extends StatelessWidget {
-  final int score;
-  final bool scoreGlitch;
-
-  const _ScoreDisplay({required this.score, required this.scoreGlitch});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('score_$score'), // Key to trigger animation on score change
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: GameConfig.hudScoreAnimationDurationMs), // Quick animation for score update
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 1 + (value * GameConfig.hudScoreScaleAnimation), // Scale up slightly on change
-          child: Text(
-            'SCORE: $score',
-            style: TextStyle(
-              fontFamily: 'Share Tech Mono',
-              fontSize: GameConfig.hudScoreFontSize,
-              color: scoreGlitch ? GameConfig.errorNeonColor : GameConfig.primaryNeonColor,
-              shadows: scoreGlitch
-                  ? [
-                      Shadow(
-                        blurRadius: GameConfig.playerTrailBlurRadiusMultiplier, // Reusing blur radius for consistent neon glow
-                        color: GameConfig.errorNeonColor.withAlpha((255 * GameConfig.hudScoreShadowAlpha).round()),
-                        offset: Offset(0, 0),
-                      ),
-                    ]
-                  : [
-                      Shadow(
-                        blurRadius: GameConfig.playerTrailBlurRadiusMultiplier, // Reusing blur radius for consistent neon glow
-                        color: GameConfig.primaryNeonColor.withAlpha((255 * GameConfig.hudScoreShadowAlpha).round()),
-                        offset: Offset(0, 0),
-                      ),
-                    ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// Generic helper for displaying text labels and values
-class _TextDisplay extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _TextDisplay({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Share Tech Mono',
-            fontSize: GameConfig.hudLabelFontSize,
-            color: color.withAlpha((255 * GameConfig.hudLabelAlpha).round()),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Share Tech Mono',
-            fontSize: GameConfig.hudValueFontSize,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

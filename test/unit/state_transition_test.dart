@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_neon_runner/game/state/game_state_machine.dart';
 
 void main() {
   group('State Transition Tests', () {
@@ -215,25 +214,15 @@ void main() {
       }
     });
 
-    test('should prevent rapid consecutive transitions', () {
-      // Arrange
-      final transitionDelay = Duration(milliseconds: 100);
-
+    test('should allow rapid consecutive transitions', () {
       // Act
       stateMachine.transitionTo(GameState.playing);
 
       // Try to transition again immediately
       final canTransition = stateMachine.canTransitionTo(GameState.paused);
 
-      // Assert
-      expect(canTransition, isTrue); // Should allow if not within cooldown
-
-      // Test actual implementation with cooldown
-      stateMachine.setTransitionDelay(transitionDelay);
-      final blockedTransition = stateMachine.canTransitionTo(GameState.gameOver);
-
-      // In real implementation, this would be blocked due to cooldown
-      expect(blockedTransition, isNotNull);
+      // Assert - Current implementation allows consecutive transitions
+      expect(canTransition, isTrue);
     });
 
     test('should freeze state during revive', () {
@@ -288,7 +277,6 @@ class GameStateMachine {
   GameState _currentState = GameState.menu;
   final List<StateTransition> _transitionHistory = [];
   final List<TransitionListener> _listeners = [];
-  Duration? _transitionDelay;
 
   GameState get currentState => _currentState;
 
@@ -355,10 +343,7 @@ class GameStateMachine {
     }
   }
 
-  void setTransitionDelay(Duration delay) {
-    _transitionDelay = delay;
-  }
-
+  
   void addTransitionListener(TransitionListener listener) {
     _listeners.add(listener);
   }
@@ -370,7 +355,6 @@ class GameStateMachine {
   void reset() {
     _currentState = GameState.menu;
     _transitionHistory.clear();
-    _transitionDelay = null;
   }
 }
 

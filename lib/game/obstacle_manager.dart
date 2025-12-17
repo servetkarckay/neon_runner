@@ -3,18 +3,16 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
-import 'package:flutter_neon_runner/game/neon_runner_game.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/game/systems/obstacle_system.dart'; // NEW import for ObstacleSystem
 import 'dart:ui' as ui; // Import for ui.Rect
 
 class ObstacleManager extends Component {
-  late final NeonRunnerGame _game;
   late final ObstacleSystem _obstacleSystem; // Dependency on ObstacleSystem
   int _obstacleIdCounter = 0;
 
-  ObstacleManager(this._game, this._obstacleSystem); // Inject ObstacleSystem
+  ObstacleManager(this._obstacleSystem); // Inject ObstacleSystem
 
   // Delegate getters to ObstacleSystem
   List<ObstacleData> get activeObstacles => _obstacleSystem.activeObstacles;
@@ -22,9 +20,8 @@ class ObstacleManager extends Component {
 
   void spawnObstacle(ObstacleData obstacle) {
     obstacle.id = ++_obstacleIdCounter;
-    // Delegate to ObstacleSystem or handle manually
-    // For now, let's add it to a temporary list if needed
-    // TODO: This should be handled by ObstacleSystem instead
+    // Delegate to ObstacleSystem
+    _obstacleSystem.addObstacle(obstacle);
   }
 
   void reset() {
@@ -38,11 +35,8 @@ class ObstacleManager extends Component {
     if (dt == 0) return;
     super.update(dt);
 
-    // Obstacle movement is now handled by ObstacleSystem.
-    // ObstacleManager simply observes the active obstacles.
-
-    // No need to iterate and move obstacles here if ObstacleSystem is already doing it.
-    // The previous debugPrint statement should be removed as well.
+    // Update the obstacle system
+    _obstacleSystem.update(dt);
   }
 
   @override

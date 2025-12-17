@@ -62,7 +62,7 @@ class ScoreValidator {
     if (player != null) {
       // Basic position validation (prevent teleporting scoring)
       try {
-        final position = player.position as dynamic?;
+        final position = player.position as dynamic;
         if (position != null) {
           // Validate position is within reasonable bounds
           final x = position.x as double? ?? 0.0;
