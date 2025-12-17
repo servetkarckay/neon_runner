@@ -7,7 +7,6 @@ import 'package:flutter_neon_runner/game/collision/spatial_hash.dart';
 import 'package:flutter_neon_runner/game/collision/collision_helpers.dart';
 import 'package:flutter_neon_runner/utils/collision_utils.dart';
 import 'package:flutter_neon_runner/utils/math_utils.dart';
-import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
 
 /// Core collision detection engine with spatial optimization

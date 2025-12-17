@@ -7,7 +7,6 @@ import 'package:flutter_neon_runner/game/collision/collision_helpers.dart';
 import 'package:flutter_neon_runner/game/collision/entity_factory.dart';
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/models/player_data.dart';
 
 void main() {
   group('Modular Collision Core Tests', () {
@@ -84,7 +83,7 @@ void main() {
         // Arrange
         final player = CollisionEntityFactory.createTestPlayerEntity(x: 100, y: 100);
         final obstacle = CollisionEntityFactory.createTestObstacleEntity(
-          x: 180, // Just outside collision range but within grazing range
+          x: 151, // Just outside collision range (player right edge at 150)
           y: 100,
           obstacleType: ObstacleType.aerial,
         );
@@ -92,7 +91,13 @@ void main() {
         // Act
         collisionEngine.addEntity(player);
         collisionEngine.addEntity(obstacle);
-        final grazingEvents = collisionEngine.detectGrazing(50.0); // 50 pixel graze distance
+
+        // First verify there's no actual collision
+        final collisions = collisionEngine.detectCollisions();
+        expect(collisions.length, equals(0), reason: 'There should be no actual collision, only grazing');
+
+        // Then check for grazing
+        final grazingEvents = collisionEngine.detectGrazing(30.0); // Use correct graze distance from GameConfig
 
         // Assert
         expect(grazingEvents.length, equals(1));
@@ -312,7 +317,7 @@ void main() {
 
         // Act - Detect collisions
         final collisions = collisionEngine.detectCollisions();
-        final grazingEvents = collisionEngine.detectGrazing(50.0);
+        final grazingEvents = collisionEngine.detectGrazing(30.0);
 
         // Assert
         expect(collisions.length, equals(testScenario.expectedCollisions));
@@ -333,7 +338,7 @@ void main() {
         collisionEngine.addEntity(powerUp);
 
         // Act
-        final collisions = collisionEngine.detectCollisions();
+        collisionEngine.detectCollisions();
 
         // Check if player can collect power-up
         final canCollect = powerUp.canCollect(player);

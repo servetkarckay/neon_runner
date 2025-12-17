@@ -1,5 +1,4 @@
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/game_state_provider.dart';
 import 'mock_leaderboard_system.dart';
 
 class TestGameStateProvider {

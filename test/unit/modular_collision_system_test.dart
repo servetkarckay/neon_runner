@@ -8,12 +8,10 @@ import 'package:flutter_neon_runner/game/collision/entity_factory.dart';
 import 'package:flutter_neon_runner/game/collision/collision_response.dart';
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/models/player_data.dart';
 
 void main() {
   group('Modular Collision System Tests', () {
     late CollisionEngine collisionEngine;
-    late CollisionEntityFactory entityFactory;
     late CollisionResponseSystem responseSystem;
 
     setUp(() {

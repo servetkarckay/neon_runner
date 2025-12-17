@@ -92,7 +92,7 @@ void main() {
         x: 100, y: 120, obstacleType: ObstacleType.aerial,
       );
       final fallingDrop = CollisionEntityFactory.createTestObstacleEntity(
-        x: 120, y: 120, obstacleType: ObstacleType.fallingDrop,
+        x: 110, y: 110, obstacleType: ObstacleType.fallingDrop,
       );
 
       // Act

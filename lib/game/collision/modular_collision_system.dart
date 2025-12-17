@@ -4,8 +4,8 @@ import 'package:flutter_neon_runner/game/collision/collision_response.dart';
 import 'package:flutter_neon_runner/game/collision/entity_factory.dart';
 import 'package:flutter_neon_runner/game/systems/player_system.dart';
 import 'package:flutter_neon_runner/game/events/game_events.dart';
+import 'package:flutter_neon_runner/game/systems/base_game_system.dart';
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
-import 'package:flutter_neon_runner/models/player_data.dart';
 import 'package:flutter_neon_runner/config/game_config.dart';
 
 // Define missing events if they don't exist in the existing event system

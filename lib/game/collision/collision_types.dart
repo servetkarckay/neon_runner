@@ -4,7 +4,6 @@ import 'package:vector_math/vector_math.dart' hide Colors;
 import 'package:flutter_neon_runner/models/obstacle_data.dart';
 import 'package:flutter_neon_runner/models/player_data.dart';
 import 'package:flutter_neon_runner/models/game_state.dart';
-import 'package:flutter_neon_runner/utils/collision_utils.dart';
 import 'package:flutter_neon_runner/game/collision/collision_helpers.dart';
 
 /// Represents the shape of a collidable entity
@@ -194,11 +193,10 @@ class PlayerEntity extends CollidableEntity {
   final Rect? currentHitbox;
 
   PlayerEntity({
-    required String id,
+    required super.id,
     required this.playerData,
     required this.currentHitbox,
   }) : super(
-    id: id,
     type: EntityType.player,
     shape: CollisionShape.rectangle,
     bounds: Rect.fromLTWH(playerData.x, playerData.y, playerData.width, playerData.height),
@@ -224,10 +222,9 @@ class ObstacleEntity extends CollidableEntity {
   final ObstacleData obstacleData;
 
   ObstacleEntity({
-    required String id,
+    required super.id,
     required this.obstacleData,
   }) : super(
-    id: id,
     type: EntityType.obstacle,
     shape: _getShapeForObstacle(obstacleData),
     bounds: Rect.fromLTWH(obstacleData.x, obstacleData.y, obstacleData.width, obstacleData.height),
@@ -308,15 +305,13 @@ class PowerUpEntity extends CollidableEntity {
   final double collectionRadius;
 
   PowerUpEntity({
-    required String id,
+    required super.id,
     required this.powerUpType,
-    required Rect bounds,
+    required super.bounds,
     this.collectionRadius = 60.0,
   }) : super(
-    id: id,
     type: EntityType.powerUp,
     shape: CollisionShape.circle,
-    bounds: bounds,
     velocity: Vector2.zero(),
     properties: {
       'powerUpType': powerUpType,

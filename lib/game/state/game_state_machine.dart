@@ -19,11 +19,13 @@ class GameStateMachine extends EventHandlerSystem {
 
   // Transition rules
   final Map<GameState, Set<GameState>> _allowedTransitions = {
-    GameState.menu: {GameState.playing, GameState.settings},
-    GameState.playing: {GameState.paused, GameState.gameOver},
-    GameState.paused: {GameState.playing, GameState.menu, GameState.settings},
-    GameState.gameOver: {GameState.reviving, GameState.playing, GameState.menu},
+    GameState.menu: {GameState.playing, GameState.leaderboardView, GameState.settings},
+    GameState.playing: {GameState.paused, GameState.gameOver, GameState.reviving},
+    GameState.paused: {GameState.playing, GameState.menu},
+    GameState.gameOver: {GameState.menu, GameState.leaderboardView},
     GameState.reviving: {GameState.playing, GameState.gameOver},
+    GameState.leaderboardView: {GameState.menu},
+    GameState.settings: {GameState.menu},
   };
 
   @override
@@ -113,7 +115,10 @@ class GameStateMachine extends EventHandlerSystem {
   }
 
   /// Check if transition is allowed
-  bool _canTransitionTo(GameState newState) {
+  bool canTransitionTo(GameState newState) {
+    // Debug log for troubleshooting
+    // _logDebug('Checking transition from $_currentState to $newState');
+
     if (_currentState == newState) return false; // No self-transitions
 
     final allowedStates = _allowedTransitions[_currentState];
@@ -123,6 +128,11 @@ class GameStateMachine extends EventHandlerSystem {
     }
 
     return allowedStates.contains(newState);
+  }
+
+  /// Private check if transition is allowed
+  bool _canTransitionTo(GameState newState) {
+    return canTransitionTo(newState);
   }
 
   /// State-specific enter logic

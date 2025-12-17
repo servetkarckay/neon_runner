@@ -6,7 +6,6 @@ import '../helpers/mock_leaderboard_system.dart';
 import '../helpers/test_game_state_provider.dart';
 import '../helpers/test_widget_wrapper.dart';
 import '../helpers/mock_neon_runner_game.dart';
-import 'package:vector_math/vector_math_64.dart';
 
 void main() {
   group('Game Flow Integration Tests', () {

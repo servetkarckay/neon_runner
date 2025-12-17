@@ -62,7 +62,6 @@ class CollisionResponseSystem {
                           collision.entityB as ObstacleEntity;
 
     final obstacleType = obstacleEntity.obstacleData.type;
-    final playerData = playerEntity.playerData;
 
     // Check for special collision types
     switch (obstacleType) {

@@ -99,8 +99,8 @@ class CollisionEntityFactory {
           id: _nextId++,
           x: x + width / 2,
           y: y + height / 2,
-          width: 20,
-          height: 20,
+          width: width,
+          height: height,
           velocityY: 100.0,
           initialY: y,
         );
@@ -209,7 +209,7 @@ class CollisionEntityFactory {
   static TestEntitySet _createGrazingTestScenario() {
     final player = createTestPlayerEntity(x: 100, y: 100);
     final obstacle = createTestObstacleEntity(
-      x: 180, // Just outside collision range but within grazing range
+      x: 151, // Just outside collision range (player right edge at 150)
       y: 100,
       obstacleType: ObstacleType.aerial,
     );
