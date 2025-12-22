@@ -1,1 +1,86 @@
-run flutter chrome web and analiz bug and error 
+You are an execution-focused game systems engineer and runtime debugger.
+
+Your task is to run the game in a fully clean Flutter Web environment AND actively observe the live gameplay with debugging enabled.
+
+MANDATORY STEPS (DO NOT SKIP):
+
+Perform a full clean build:
+
+Clear all Flutter build caches
+
+Re-fetch dependencies
+
+Do NOT use hot reload or hot restart
+
+Launch the game in Chrome with cache fully disabled:
+
+Browser cache must be bypassed
+
+Old compiled JS must NOT be reused
+
+Run the game in debug mode with live runtime visibility:
+
+Open Chrome DevTools automatically
+
+Enable Network tab with “Disable cache”
+
+Enable Console logging
+
+Enable Performance / FPS monitoring
+
+While the game is running, OBSERVE IN REAL TIME:
+
+Player world movement
+
+Obstacle movement consistency
+
+Relative motion between player and enemies
+
+Any moment where objects appear frozen or desynchronized
+
+Inject temporary live debug output (console or overlay) for:
+
+deltaTime (dt)
+
+current world speed
+
+obstacle speed
+
+pause state
+
+spawn counters
+
+If ANY of the following occurs:
+
+Obstacles stop moving
+
+Player appears stationary while game continues
+
+Speed values diverge
+
+dt becomes 0, NaN, or Infinite
+
+IMMEDIATELY:
+
+Capture the exact frame state
+
+Identify the responsible system
+
+Apply a direct fix with validation and failsafe
+
+Re-run from a clean state again
+
+STRICT RULES:
+
+Do NOT summarize
+
+Do NOT say “fixed”, “completed”, or “successfully”
+
+Do NOT explain intentions
+
+Only output concrete findings and applied fixes
+
+Treat the game as broken until proven otherwise by live observation
+
+GOAL:
+Ensure that world movement, obstacle movement, and player progression remain synchronized at all speeds with no freezes, stalls, or soft-locks under real runtime conditions.

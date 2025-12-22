@@ -119,16 +119,34 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
 
   @override
   void update(double dt) {
-    // Skip update if dt is 0 to prevent potential issues with calculations
-    if (dt == 0) {
-      // Only log this warning occasionally to avoid spam
+    // Comprehensive delta time validation to prevent game progression stalls
+    const maxDt = 0.1; // Maximum 100ms per frame
+
+    // Clamp delta time to prevent physics breakdown
+    if (dt > maxDt) {
+      dt = maxDt;
+      _dtWarningCounter++;
+      if (_dtWarningCounter % 60 == 0) {
+        debugPrint('WARNING: dt clamped to $maxDt to prevent physics breakdown');
+      }
+    }
+
+    // DEBUG: Log dt every 60 frames (1 second at 60fps)
+    if (frames % 60 == 0 && !paused) {
+      print('[DEBUG] frames=$frames dt=$dt speed=$speed obstacles=${_obstacleManager.activeObstacles.length}');
+    }
+
+    // Failsafe: use fallback for invalid dt instead of skipping entirely
+    if (dt <= 0 || dt.isNaN || dt.isInfinite) {
       if (!paused) {
         _dtWarningCounter++;
-        if (_dtWarningCounter % 60 == 0) {
-          debugPrint('WARNING: dt is 0 but game is NOT paused - skipping update to prevent issues');
+        if (_dtWarningCounter % 30 == 0) {
+          print('[CRITICAL] Invalid dt ($dt) - using fallback to prevent freeze');
         }
+        dt = 1.0 / 60.0; // Use fallback instead of returning
+      } else {
+        return;
       }
-      return;
     }
 
     super.update(dt);
@@ -160,6 +178,15 @@ class NeonRunnerGame extends FlameGame with KeyboardEvents {
       if (speed < GameConfig.maxSpeed) {
         speed += GameConfig.speedIncrement;
       }
+    }
+
+    // Synchronize obstacle system speed to prevent desynchronization
+    _obstacleSystem.setCurrentSpeed(speed);
+
+    // Failsafe: enforce minimum speed to prevent movement stall
+    if (speed < GameConfig.baseSpeed) {
+      speed = GameConfig.baseSpeed;
+      _obstacleSystem.setCurrentSpeed(speed);
     }
 
     // Score update

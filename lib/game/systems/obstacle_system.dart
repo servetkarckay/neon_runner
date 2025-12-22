@@ -55,7 +55,24 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
   void update(double dt) {
     if (_isPaused) return;
 
+    // Clamp delta time at start of update loop to prevent physics breakdown
+    const maxDt = 0.1;
+    if (dt > maxDt) dt = maxDt;
+
+    // Failsafe: if dt is invalid, use fixed fallback
+    if (dt <= 0 || dt.isNaN || dt.isInfinite) {
+      dt = 1.0 / 60.0; // Fixed fallback to 60fps
+    }
+
     _frames++;
+
+    // Failsafe: prevent frame counter overflow
+    const maxFrames = 2147483647 - 1000; // Safe margin from int max
+    if (_frames > maxFrames) {
+      _frames = 0;
+      _nextSpawn = _nextSpawn > maxFrames ? _nextSpawn - maxFrames : _frames + 60;
+    }
+
     _updateObstacleMovement(dt);
     _updateSpawning();
     _removeOffscreenObstacles();
@@ -106,7 +123,12 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
   }
 
   void setCurrentSpeed(double speed) {
-    _currentSpeed = speed;
+    // Enforce minimum world speed before movement calculations
+    if (speed <= 0 || speed.isNaN || speed.isInfinite) {
+      _currentSpeed = GameConfig.baseSpeed;
+    } else {
+      _currentSpeed = speed.clamp(GameConfig.baseSpeed, GameConfig.speedHardCap);
+    }
   }
 
   // Private methods
@@ -239,7 +261,10 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
   void _calculateNextSpawn() {
     final minGap = (GameConfig.spawnRateMin - min((_currentSpeed - GameConfig.baseSpeed) * 2, 30)).toInt();
     final maxGap = GameConfig.spawnRateMax;
-    int gap = Random().nextInt(maxGap - minGap + 1) + minGap;
+
+    // Failsafe: ensure minimum gap to prevent negative values
+    final safeMinGap = minGap.clamp(10, maxGap);
+    int gap = Random().nextInt(maxGap - safeMinGap + 1) + safeMinGap;
 
     // Adjust gap based on obstacle difficulty
     if (_activeObstacles.isNotEmpty) {
@@ -259,10 +284,23 @@ class ObstacleSystem extends EventHandlerSystem implements PausableSystem, Reset
       }
     }
 
+    // Emergency failsafe: prevent infinite spawn delays
+    gap = gap.clamp(10, 300);
     _nextSpawn = _frames + gap;
+
+    // Additional failsafe: ensure spawn timer doesn't overflow
+    if (_nextSpawn < _frames) {
+      _nextSpawn = _frames + 30; // Emergency reset
+    }
   }
 
   void _updateObstacleMovement(double dt) {
+    // DEBUG: Log obstacle movement every 60 frames
+    if (_frames % 60 == 0 && _activeObstacles.isNotEmpty) {
+      final firstObs = _activeObstacles.first;
+      print('[OBSTACLE_DEBUG] frames=$_frames currentSpeed=$_currentSpeed dt=$dt firstObstacleX=${firstObs.x}');
+    }
+
     for (final obstacle in _activeObstacles) {
       obstacle.x -= _currentSpeed * dt;
 

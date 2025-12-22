@@ -13,10 +13,11 @@ class GameConfig {
   static const int jumpTimerMax = 12;
   static const double groundLevel = 400 - 50; // BASE_HEIGHT - 50
   static const double baseSpeed = 7;
-  static const double maxSpeed = 17;
-  static const double speedIncrement = 0.001;
-  static const int spawnRateMin = 50;
-  static const int spawnRateMax = 110;
+  static const double maxSpeed = 15;
+  static const double speedIncrement = 0.0008;
+  static const int spawnRateMin = 40;
+  static const int spawnRateMax = 90;
+  static const double speedHardCap = 18.0; // Emergency speed limit
   static const double powerUpSpawnChance = 0.12;
   static const double baseWidth = 800;
   static const double baseHeight = 400;

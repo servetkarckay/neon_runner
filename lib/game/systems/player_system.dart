@@ -51,6 +51,15 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
   void update(double dt) {
     if (_isPaused) return;
 
+    // Clamp delta time at start of update loop to prevent physics breakdown
+    const maxDt = 0.1;
+    if (dt > maxDt) dt = maxDt;
+
+    // Failsafe: if dt is invalid, use fixed fallback
+    if (dt <= 0 || dt.isNaN || dt.isInfinite) {
+      dt = 1.0 / 60.0; // Fixed fallback to 60fps
+    }
+
     // Update input buffers
     _updateInputBuffers();
 
@@ -105,6 +114,11 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
     _duckInputBuffer = false;
     _jumpBufferTimer = 0;
     _trailHistory.clear();
+
+    // Force clear all input states to prevent loops
+    _playerData.isHoldingJump = false;
+    _playerData.isDucking = false;
+    _playerData.isJumping = false;
   }
 
   // Public methods for other systems
@@ -172,12 +186,23 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
   void _updateInputBuffers() {
     if (_jumpBufferTimer > 0) {
       _jumpBufferTimer--;
+      if (_jumpBufferTimer <= 0) {
+        _jumpInputBuffer = false;
+        _playerData.isHoldingJump = false;
+      }
     }
 
-    // Process buffered jump input
+    // Process buffered jump input with failsafe
     if (_jumpInputBuffer && !_playerData.isJumping) {
       _performJump();
       _jumpInputBuffer = false;
+    }
+
+    // Force clear stale inputs to prevent loops
+    if (_jumpBufferTimer > GameConfig.jumpBufferDuration) {
+      _jumpInputBuffer = false;
+      _jumpBufferTimer = 0;
+      _playerData.isHoldingJump = false;
     }
 
     // Apply duck input
@@ -194,6 +219,10 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
   void _updatePhysics(double dt) {
     final timeScale = _playerData.timeWarpTimer > 0 ? 0.5 : 1.0;
 
+    // Clamp velocity to prevent physics break
+    const maxVelocity = 50.0;
+    _playerData.velocityY = _playerData.velocityY.clamp(-maxVelocity, maxVelocity);
+
     // Jump sustain
     if (_playerData.isJumping &&
         _playerData.isHoldingJump &&
@@ -204,6 +233,13 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
 
     // Apply gravity
     _playerData.velocityY += GameConfig.gravity * timeScale;
+
+    // Emergency physics failsafe - reset if velocity becomes invalid
+    if (_playerData.velocityY.abs() > 100) {
+      _playerData.velocityY = 0;
+      _playerData.y = GameConfig.groundLevel - _playerData.height;
+      _playerData.isJumping = false;
+    }
 
     // Update position
     _playerData.y += _playerData.velocityY * timeScale;
@@ -239,34 +275,65 @@ class PlayerSystem extends EventHandlerSystem implements PausableSystem, Resetta
       _playerData.height,
     ));
 
-    // Maintain trail length based on speed
-    final maxTrail = (10 + 100 * 0.8).floor(); // Using current speed
+    // Fixed maximum trail length with failsafe
+    const maxTrail = 50;
+    const emergencyTrailLimit = 200;
+
     if (_trailHistory.length > maxTrail) {
-      _trailHistory.removeAt(0);
+      final removeCount = _trailHistory.length - maxTrail;
+      _trailHistory.removeRange(0, removeCount);
+    }
+
+    // Emergency memory protection
+    if (_trailHistory.length > emergencyTrailLimit) {
+      _trailHistory.clear();
+      _trailHistory.add(Rect.fromLTWH(
+        _playerData.x,
+        _playerData.y,
+        _playerData.width,
+        _playerData.height,
+      ));
     }
   }
 
   void _updatePowerUpTimers(double dt) {
+    // Failsafe: validate all timers before processing
+    const maxTimer = 36000; // 10 minutes at 60fps
+
     if (_playerData.timeWarpTimer > 0) {
       _playerData.timeWarpTimer--;
+      if (_playerData.timeWarpTimer < 0 || _playerData.timeWarpTimer > maxTimer) {
+        _playerData.timeWarpTimer = 0;
+      }
     }
 
     if (_playerData.multiplierTimer > 0) {
       _playerData.multiplierTimer--;
-      if (_playerData.multiplierTimer <= 0) {
+      if (_playerData.multiplierTimer <= 0 || _playerData.multiplierTimer > maxTimer) {
         _playerData.scoreMultiplier = 1;
+        _playerData.multiplierTimer = 0;
       }
     }
 
     if (_playerData.magnetTimer > 0) {
       _playerData.magnetTimer--;
-      if (_playerData.magnetTimer <= 0) {
+      if (_playerData.magnetTimer <= 0 || _playerData.magnetTimer > maxTimer) {
         _playerData.hasMagnet = false;
+        _playerData.magnetTimer = 0;
       }
     }
 
     if (_playerData.invincibleTimer > 0) {
       _playerData.invincibleTimer--;
+      if (_playerData.invincibleTimer < 0 || _playerData.invincibleTimer > maxTimer) {
+        _playerData.invincibleTimer = 0;
+      }
+    }
+
+    // Emergency state validation
+    if (_playerData.scoreMultiplier <= 0 || _playerData.scoreMultiplier > 99) {
+      _playerData.scoreMultiplier = 1;
+      _playerData.multiplierTimer = 0;
     }
   }
 

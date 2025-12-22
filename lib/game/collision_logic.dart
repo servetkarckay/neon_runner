@@ -222,8 +222,10 @@ class CollisionLogic {
       return null;
     }
 
-    double dx = movingRectVelocity.x;
-    double dy = movingRectVelocity.y;
+    // Clamp velocity to prevent infinite edge cases
+    const maxVelocity = 1000.0;
+    double dx = movingRectVelocity.x.clamp(-maxVelocity, maxVelocity);
+    double dy = movingRectVelocity.y.clamp(-maxVelocity, maxVelocity);
 
     // Calculate entry and exit times for X and Y axes
     double xInvEntry, yInvEntry;

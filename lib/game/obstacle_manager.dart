@@ -32,7 +32,15 @@ class ObstacleManager extends Component {
 
   @override
   void update(double dt) {
-    if (dt == 0) return;
+    // Clamp dt to prevent physics breakdown
+    const maxDt = 0.1;
+    if (dt > maxDt) dt = maxDt;
+
+    // Failsafe: use fixed fallback for invalid dt to prevent movement freeze
+    if (dt <= 0 || dt.isNaN || dt.isInfinite) {
+      dt = 1.0 / 60.0;
+    }
+
     super.update(dt);
 
     // Update the obstacle system
